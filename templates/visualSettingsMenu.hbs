@@ -1,0 +1,242 @@
+<div class="visual-settings-menu">
+    {{!-- Главное меню --}}
+    {{#if (eq showMode "home")}}
+        <div class="vsm-main-menu-body">
+            <div class="vsm-menu-button" data-mode="menuUI"><i class="fas fa-object-group"></i><span>{{localize "visual-novel-dialogues.visualSettingsMenu.uiMenuButton"}}</span></div>
+            <div class="vsm-menu-button" data-mode="menuVisual"><i class="fas fa-paintbrush"></i><span>{{localize "visual-novel-dialogues.visualSettingsMenu.visSettingsButton"}}</span></div>
+            <div class="vsm-menu-button" data-mode="menuTech"><i class="fas fa-wrench"></i><span>{{localize "visual-novel-dialogues.visualSettingsMenu.techSettingsButton"}}</span></div>
+            <div class="vsm-menu-button" data-mode="menuModules"><i class="fas fa-cube"></i><span>{{localize "visual-novel-dialogues.visualSettingsMenu.modulesButton"}}</span></div>
+        </div>
+    {{!-- Меню настройки UI --}}
+    {{else if (eq showMode "menuUI")}}
+        <div class="vsm-UI-menu-body">
+            <div class="vsm-header flexrow">
+                <div class="vsm-toMenu-button flexrow vsm-left"><i class="fas fa-arrow-left"></i><span>{{localize "visual-novel-dialogues.visualSettingsMenu.toMenuButton"}}</span></div>
+                <span class="vsm-hint-title">{{localize "visual-novel-dialogues.visualSettingsMenu.headerTitle"}}</span>
+                <span class="vsm-hint">{{localize "visual-novel-dialogues.visualSettingsMenu.hintPlaceholder"}}</span>
+            </div>
+
+            <div class="vsm-body flexrow">
+                <div class="vsm-UI-container">
+                    <div class="vsm-UI">
+
+                        {{!-- Кнопки --}}
+                        <div class="vsm-buttons">
+                            {{#each buttons as |button|}}
+                                <div class="vsm-button-box" data-key="{{button.key}}" style="{{button.style}}" data-tooltip="{{button.tooltip}}"><i class="fas fa-{{button.icon}}"></i></div>
+                            {{/each}}
+                        </div>
+
+                        {{!-- Заголовок --}}
+                        <div class="vsm-UI-header-container">
+                            <div class="vsm-UI-header flexrow vsm-move-headerSlider" style="left: {{offset.headerSliderX}}%; top: {{offset.headerSliderY}}%;">
+                                <div class="vsm-locName">
+                                    <span>{{localize "visual-novel-dialogues.visualSettingsMenu.location"}}</span>
+                                    <div class="vsm-checkbox vsm-up vsm-dashed"><input type="checkbox" data-key="activeElements.locName" {{#if activeElements.locName}}checked{{/if}}></div>
+                                </div>
+                                <div class="vsm-parLocName">
+                                    <span>{{localize "visual-novel-dialogues.visualSettingsMenu.parentLocation"}}</span>
+                                    <div class="vsm-checkbox vsm-up vsm-dashed"><input type="checkbox" data-key="activeElements.parLocName" {{#if activeElements.parLocName}}checked{{/if}}></div>
+                                </div>
+                                <div class="vsm-time-weather-container flexrow">
+                                    <div class="vsm-clock-container">
+                                        <span class="vsm-clock">12:30</span>
+                                        <div class="vsm-checkbox vsm-up vsm-dashed"><input type="checkbox" data-key="activeElements.clock" {{#if activeElements.clock}}checked{{/if}}></div>
+                                    </div>
+                                    <div class="vsm-weather-container">
+                                        <i class="fas fa-sun"></i>
+                                        <div class="vsm-checkbox vsm-up vsm-dashed"><input type="checkbox" data-key="activeElements.weather" {{#if activeElements.weather}}checked{{/if}}></div>
+                                    </div>
+                                    <div class="vsm-temperature-container">
+                                        <i class="fas fa-temperature-high"></i>
+                                        <div class="vsm-checkbox vsm-up vsm-dashed"><input type="checkbox" data-key="activeElements.temperature" {{#if activeElements.temperature}}checked{{/if}}></div>
+                                    </div>
+                                </div>
+                                <div class="vsm-checkbox vsm-left vsm-main"><input type="checkbox" data-key="activeElements.headerSlider" {{#if activeElements.headerSlider}}checked{{/if}}></div>
+                                <div class="vsm-mover vsm-down flexrow" data-slider="headerSlider">
+                                    <div class="vsm-mover-reset" data-key="mover.reset"><i class="fas fa-redo-alt"></i></div>
+                                    <div class="vsm-mover-text">
+                                        <span class="vsm-mover-X">X: {{offset.headerSliderX}}%</span>
+                                        <span class="vsm-mover-Y">Y: {{offset.headerSliderY}}%</span>
+                                    </div>
+                                    <div class="vsm-mover-grab" data-key="mover.headerSlider"><i class="fas fa-arrows-up-down-left-right"></i></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{!-- Левый слайдер --}}
+                        <div class="vsm-slider vsm-left vsm-move-leftSlider" style="left: {{offset.leftSliderX}}%; top: {{offset.leftSliderY}}%;">
+                            {{!-- Изображения слайдера (фон и верхняя часть ) --}}
+                            <div class="vsm-slider-img vsm-left">
+                                <div class="vsm-checkbox vsm-down vsm-main" style="left: 5%"><input type="checkbox" data-key="activeElements.leftSlider" {{#if activeElements.leftSlider}}checked{{/if}}></div>
+                            </div>
+                            {{!-- Портреты в левой части --}}
+                            <div class="vsm-portraits vsm-right" class="flexrow">
+                                {{!-- Количество слотов --}}
+                                <div class="vsm-slots">
+                                    <input class="vsm-slots-input" type="text" data-key="slotCount.left" value="{{slotCount.left}}" placeholder="{{data.slotCountPlaceholder}}"/>
+                                </div>
+                                <div class="vsm-portraits-container flexrow">
+                                    {{#each pFields.left as |pField|}}
+                                        {{!-- Пустой контейнер (отображаемый контур псевдо-контейнера портрета для перетягивания нового актёра) --}}
+                                        <div class="vsm-pField vsm-left" data-key="mainSlot.left">
+                                            {{#if (eq pField 2)}}<div class="vsm-active-pField-arrow"></div>{{/if}}
+                                        </div>
+                                    {{/each}}
+                                </div>
+                            </div>
+                            {{!-- Текст слайдера --}}
+                            <div class="vsm-text-box vsm-left flexcol">
+                                <div class="vsm-text-container">
+                                    {{!-- Имя --}}
+                                    <div class="vsm-name-container flexrow">
+                                        <div class="flex0" style="border-right: 2px dashed"><input type="checkbox" data-key="activeElements.leftName" {{#if activeElements.leftName}}checked{{/if}}></div>
+                                        <span class="vsm-name">{{localize "visual-novel-dialogues.visualSettingsMenu.name"}}</span>
+                                    </div>
+                                    {{!-- Титул/звание/т.п. --}}
+                                    <div class="vsm-title-container flexrow">
+                                        <div class="flex0" style="border-right: 2px dashed"><input type="checkbox" data-key="activeElements.leftTitle" {{#if activeElements.leftTitle}}checked{{/if}}></div>
+                                        <span class="vsm-title">{{localize "visual-novel-dialogues.visualSettingsMenu.title"}}</span>
+                                    </div>
+                                    <div class="vsm-checkbox vsm-left vsm-main"><input type="checkbox" data-key="activeElements.leftNameBox" {{#if activeElements.leftNameBox}}checked{{/if}}></div>
+                                </div>
+                            </div>
+                            {{!-- Штука для перемещения --}}
+                            <div class="vsm-mover vsm-down flexrow" data-slider="leftSlider">
+                                <div class="vsm-mover-reset" data-key="mover.reset"><i class="fas fa-redo-alt"></i></div>
+                                <div class="vsm-mover-text">
+                                    <span class="vsm-mover-X">X: {{offset.leftSliderX}}%</span>
+                                    <span class="vsm-mover-Y">Y: {{offset.leftSliderY}}%</span>
+                                </div>
+                                <div class="vsm-mover-grab" data-key="mover.leftSlider"><i class="fas fa-arrows-up-down-left-right"></i></div>
+                            </div>
+                        </div>
+
+                        
+                        {{!-- Правый слайдер --}}
+                        <div class="vsm-slider vsm-right vsm-move-rightSlider" style="right: {{offset.rightSliderX}}%; top: {{offset.rightSliderY}}%;">
+                            {{!-- Изображения слайдера (фон и верхняя часть ) --}}
+                            <div class="vsm-slider-img vsm-right">
+                                <div class="vsm-checkbox vsm-down vsm-main" style="right: 5%"><input type="checkbox" data-key="activeElements.rightSlider" {{#if activeElements.rightSlider}}checked{{/if}}></div>
+                            </div>
+                            {{!-- Портреты в левой части --}}
+                            <div class="vsm-portraits vsm-right" class="flexrow">
+                                {{!-- Количество слотов --}}
+                                <div class="vsm-slots">
+                                    <input class="vsm-slots-input" type="text" data-key="slotCount.right" value="{{slotCount.right}}" placeholder="{{data.slotCountPlaceholder}}"/>
+                                </div>
+                                <div class="vsm-portraits-container flexrow">
+                                    {{#each pFields.right as |pField|}}
+                                        {{!-- Пустой контейнер (отображаемый контур псевдо-контейнера портрета для перетягивания нового актёра) --}}
+                                        <div class="vsm-pField vsm-right" data-key="mainSlot.right">
+                                            {{#if (eq pField 2)}}<div class="vsm-active-pField-arrow"></div>{{/if}}
+                                        </div>
+                                    {{/each}}
+                                </div>
+                            </div>
+                            {{!-- Текст слайдера --}}
+                            <div class="vsm-text-box vsm-right flexcol">
+                                <div class="vsm-text-container">
+                                    {{!-- Имя --}}
+                                    <div class="vsm-name-container flexrow">
+                                        <span class="vsm-name">{{localize "visual-novel-dialogues.visualSettingsMenu.name"}}</span>
+                                        <div class="flex0" style="border-left: 2px dashed"><input type="checkbox" data-key="activeElements.rightName" {{#if activeElements.rightName}}checked{{/if}}></div>
+                                    </div>
+                                    {{!-- Титул/звание/т.п. --}}
+                                    <div class="vsm-title-container flexrow">
+                                        <span class="vsm-title">{{localize "visual-novel-dialogues.visualSettingsMenu.title"}}</span>
+                                        <div class="flex0" style="border-left: 2px dashed"><input type="checkbox" data-key="activeElements.rightTitle" {{#if activeElements.rightTitle}}checked{{/if}}></div>
+                                    </div>
+                                    <div class="vsm-checkbox vsm-right vsm-main"><input type="checkbox" data-key="activeElements.rightNameBox" {{#if activeElements.rightNameBox}}checked{{/if}}></div>
+                                </div>
+                            </div>
+                            {{!-- Штука для перемещения --}}
+                            <div class="vsm-mover vsm-down flexrow" data-slider="rightSlider">
+                                <div class="vsm-mover-reset" data-key="mover.reset"><i class="fas fa-redo-alt"></i></div>
+                                <div class="vsm-mover-text">
+                                    <span class="vsm-mover-X">X: {{offset.rightSliderX}}%</span>
+                                    <span class="vsm-mover-Y">Y: {{offset.rightSliderY}}%</span>
+                                </div>
+                                <div class="vsm-mover-grab" data-key="mover.rightSlider"><i class="fas fa-arrows-up-down-left-right"></i></div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="vsm-ui-save-button flexrow vsm-hidden">
+                        <i class="fas fa-save"></i>
+                        <span>{{localize "visual-novel-dialogues.visualSettingsMenu.uiSaveButton"}}</span>
+                    </div>
+                </div>
+                <div class="vsm-preset-list" style="background: url(../ui/parchment.jpg) repeat;">
+                    <p>{{localize "visual-novel-dialogues.visualSettingsMenu.presetsHint1"}}</p>
+                    <p>{{localize "visual-novel-dialogues.visualSettingsMenu.presetsHint2"}}</p>
+                    <div class="vsm-presets-container">
+                        {{#each presets as |preset|}}
+                            <div class="vsm-preset{{#if (eq ../data.editblePresetId preset.id)}} vsm-preset-editing{{/if}}{{#if (eq ../data.choodedPresetId preset.id)}} vsm-preset-active{{/if}}" data-id="{{preset.id}}">
+                                <input class="vsm-preset-input" type="text" value="{{preset.name}}" style="border-radius: 5px"/>
+                                <div class="vsm-preset-buttons flexrow">
+                                    <div class="vsm-hotkey-button flexrow" data-tooltip="{{localize "visual-novel-dialogues.visualSettingsMenu.placeholderWIP"}}">
+                                        <div class="vsm-mini-button" data-type="editAndSave"><i class="fas fa-square-pen"></i></div>
+                                        <div class="vsm-hotkey-textbox">
+                                            <span>{{preset.hotkey}}</span>
+                                        </div>
+                                        <div class="vsm-mini-button" data-type="delete"><i class="fas fa-trash"></i></div>
+                                    </div>
+                                    <button type="import" class="vsm-preset-import"><i class="fas fa-file-import"></i></button>
+                                    <button type="export" class="vsm-preset-export"><i class="fas fa-file-export"></i></button>
+                                </div>
+                                <div class="vsm-preset-delete"><i class="fas fa-trash"></i></div>
+                            </div>
+                        {{/each}}
+                        <div class="vsm-add-preset"><i class="fas fa-plus"></i></div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    {{else}}
+        {{!-- Меню настроек --}}
+        <form class="vsm-settings-list-body">
+            <div class="vsm-setting-list-header flexrow">
+                <div class="vsm-toMenu-button flexrow vsm-left"><i class="fas fa-arrow-left"></i><span>{{localize "visual-novel-dialogues.visualSettingsMenu.toMenuButton"}}</span></div>
+                <span class="vsm-settings-menu-hint">{{localize "visual-novel-dialogues.visualSettingsMenu.settingsMenuHint"}}</span>
+                <div class="vsm-save-button flexrow vsm-right"><span>{{localize "visual-novel-dialogues.visualSettingsMenu.saveButton"}}</span><i class="fas fa-save"></i></div>
+            </div>
+            {{#each settings as |setting|}}
+                <div class="form-group vsm-setting-container" data-type="{{setting.type}}" data-key="{{setting.key}}">
+                    <label>{{setting.name}}</label>
+                    {{#if setting.button}}
+                        <button type="button" class="vsm-setting-menu-button" data-key="{{setting.key}}">
+                            <i class="{{setting.icon}}"></i>
+                            <label>{{setting.label}}</label>
+                        </button>
+                    {{else}}
+                        <div class="form-fields">
+                            {{#if (eq setting.type "boolean")}}
+                                <input type="checkbox" data-dtype="Boolean" {{#if setting.value}}checked{{/if}}>
+                            {{else if (eq setting.type "number")}}
+                                <input type="number" value="{{setting.value}}" step="any">
+                            {{else if (eq setting.type "string")}}
+                                {{#if setting.choices}}
+                                    <select name="{{item.key}}" data-dtype="String">
+                                        {{#each setting.choices as |item|}}
+                                            <option value="{{item.key}}" {{#if (eq item.key setting.value)}}selected{{/if}}>{{item.value}}</option>
+                                        {{/each}}
+                                    </select>
+                                {{else if setting.filePicker}}
+                                    <input type="text" class="vsm-filepicker-input" name="{{setting.key}}" value="{{setting.value}}" data-dtype="String">
+                                    <button type="button" class="vsm-filepicker" data-type="{{setting.filePicker}}" data-target="{{setting.key}}" title="{{localize "FILES.BrowseTooltip"}}" tabindex="-1">
+                                        <i class="fas fa-file-import fa-fw"></i>
+                                    </button>
+                                {{else}}
+                                    <input type="text" value="{{setting.value}}" data-dtype="String">
+                                {{/if}}
+                            {{/if}}
+                        </div>
+                    {{/if}}
+                    <p class="notes">{{setting.hint}}</p>
+                </div>
+            {{/each}}
+        </form>
+    {{/if}}
+</div>

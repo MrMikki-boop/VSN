@@ -1,0 +1,328 @@
+<div id='vn-body' class='vn-body dnd5e sheet' style="z-index:{{zIndex}};{{#if forceDisplay}}display: grid !important;{{/if}}">
+    <div id="vn-background" class="{{bodyClass}}" {{#if hideBack}}style="pointer-events: none;"{{/if}}>
+        {{!-- Фон --}}
+        <div id="vn-background-image" class="{{#if hideBack}}vn-hidden{{/if}}" style="background-image: url({{backgroundImage}});"></div>
+        {{!-- Тень бекграунда --}}
+        <div id="vn-background-shadow" class="{{#if hideBack}}vn-hidden{{/if}}"></div>
+    </div>
+    {{!-- Верхняя плашка --}}
+    <div id="vn-up" class="vn-up-container {{slidersClass}}" style="{{#unless activeElements.headerSlider}} display: none;{{/unless}}">
+        <div class="vn-header-slider" style="left: {{offset.headerSliderX}}%; top: {{offset.headerSliderY}}%;">
+            {{!-- Мини-очередь --}}
+            {{#if shownElements.miniOrder}}
+                <div class="vn-mini-order-body">
+                    <div class="vn-mo-left">
+                        {{#each order.left as |orderElement|}}
+                            <div class="vn-mo-item" data-side="left" {{#unless orderElement.img}}style="display: none;"{{/unless}} data-id="{{orderElement.id}}" data-tooltip="{{orderElement.name}}">
+                                <img src="{{orderElement.img}}">
+                            </div>
+                        {{/each}}
+                    </div>
+                    <div class="vn-mo-right">
+                        {{#each order.right as |orderElement|}}
+                            <div class="vn-mo-item" data-side="right" {{#unless orderElement.img}}style="display: none;"{{/unless}} data-id="{{orderElement.id}}" data-tooltip="{{orderElement.name}}">
+                                <img src="{{orderElement.img}}">
+                            </div>
+                        {{/each}}
+                    </div>
+                </div>
+            {{/if}}
+            {{!-- Изображение (фон) верхной плашки --}}
+            <img class="vn-header" src="{{slidersSet.headerImg}}" style="left:{{slidersSet.headerImg.offsetX}}px; top:{{slidersSet.headerImg.offsetY}}px; transform: scale({{slidersSet.headerImg.scale}}%);"/>
+            <div class="vn-header-content flexrow">
+                {{!-- Текущая локация (город/здание/место) --}}
+                {{#if activeElements.locName}}
+                    <div class="vn-current-location"{{#unless activeElements.locName}} style="display: none;"{{/unless}}>
+                        <div id="vn-current-location-body" class="vn-current-location-body" data-tooltip="{{localize "visual-novel-dialogues.header.currentLocation"}}">
+                            <span style="font-size: 1vw; font-family: '{{headerFont}}';">{{locationName}}</span>
+                            {{!-- <span style="font-size: {{locationNameSize}}vw; font-family: '{{headerFont}}';">{{locationName}}</span> --}}
+                        </div>
+                        <div class="vn-location-dropdown">
+                            {{#each parentLocationList as |this|}}
+                                <div class="vn-location-option-body">
+                                    <span>{{this}}</span>
+                                </div>
+                            {{/each}}
+                        </div>
+                    </div>
+                {{/if}}
+                {{!-- Родительская локация (страна/регион) --}}
+                {{#if activeElements.parLocName}}
+                    <div class="vn-parent-location"{{#unless activeElements.parLocName}} style="display: none;"{{/unless}}>
+                        <div id="vn-parent-location-body" class="vn-parent-location-body" data-tooltip="{{localize "visual-novel-dialogues.header.parentLocation"}}">
+                            <span style="font-size: 1vw; font-family: '{{headerFont}}';">{{parentLocation}}</span>
+                            {{!-- <span style="font-size: {{parentLocationSize}}vw; font-family: '{{headerFont}}';">{{parentLocation}}</span> --}}
+                        </div>
+                    </div>
+                {{/if}}
+                {{!-- Время --}}
+                {{#if activeElements.clock}}
+                    <div id="vn-time" class="vn-time-body"{{#unless activeElements.clock}} style="display: none;"{{/unless}}>
+                        <span class="vn-clock" data-tooltip="{{#if editMode}}{{localize "visual-novel-dialogues.header.editTime"}}{{else}}{{localize "visual-novel-dialogues.header.viewTime"}}{{/if}}">{{time}}</span>
+                        <div id="vn-clock-dropdown" class="vn-clock-dropdown flexrow">
+                            <div class="vn-clock-setting flexrow">
+                                {{#each timeNumbers as |number index|}}
+                                    <div class="vn-clock-number-body flexcol">
+                                        {{#unless (eq number ":")}}<div class="vn-clock-button" data-type="plus" data-index="{{index}}"><i class="fa-solid fa-plus"></i></div>{{/unless}}
+                                        <span class="vn-clock-number">{{number}}</span>
+                                        {{#unless (eq number ":")}}<div class="vn-clock-button" data-type="minus" data-index="{{index}}"><i class="fa-solid fa-minus"></i></div>{{/unless}}
+                                    </div>
+                                {{/each}}
+                            </div>
+                            <div class="flexcol" style="flex: 0; min-width: 25px">
+                                <div class="vn-clock-confirm-button" data-tooltip="{{localize "visual-novel-dialogues.buttons.confirm"}}"><i class="fa-solid fa-check"></i></div>
+                                <div class="vn-clock-reset-button" data-tooltip="{{localize "visual-novel-dialogues.buttons.reset"}}"><i class="fa-solid fa-rotate-left"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                {{/if}}
+                {{!-- Погода --}}
+                {{#if activeElements.weather}}
+                    <div id="vn-weather" class="vn-weather-body" data-tooltip="{{weather.name}}" data-id="{{weather.id}}"{{#unless activeElements.weather}} style="display: none;"{{/unless}}>
+                        <i class="{{weather.icon}} fa-solid vn-chosen-weather"></i>
+                        <div class="vn-weather-dropdown flexcol" style="display: none">
+                            <div class="vn-weather-option" data-id="new" data-tooltip="{{localize "visual-novel-dialogues.header.weatherTooltip"}}">
+                                <i class="fas fa-plus"></i>
+                                <span>{{localize "visual-novel-dialogues.header.newWeather"}}</span>
+                            </div>
+                            {{#each weatherList as |this|}}
+                                <div class="vn-weather-option" data-id="{{this.id}}" data-tooltip="{{localize "visual-novel-dialogues.header.weatherTooltip"}}">
+                                    <i class="{{this.icon}}"></i>
+                                    <span>{{this.name}}</span>
+                                </div>
+                            {{/each}}
+                        </div>
+                    </div>
+                {{/if}}
+                {{!-- Температура --}}
+                {{#if activeElements.temperature}}
+                    <div id="vn-temperature" class="vn-temperature-body" data-tooltip="{{temperature}}°C"{{#unless activeElements.temperature}} style="display: none;"{{/unless}}>
+                        <i class="fas fa-temperature-low vn-thermometer" style="color: {{temperatureColor}}"></i>
+                            <input id="vn-edit-temperature" type="range" {{#unless shownElements.locationSubChanges}}disabled{{/unless}} class="vn-temperature-slider{{#unless editMode}} vn-hidden{{/unless}}" name="temperature" value="{{temperature}}" min="-100" max="100" step="1">
+                    </div>
+                {{/if}}
+            </div>
+        </div>
+    </div>
+    {{!-- Левый слайдер --}}
+    <div id="vn-left" class="{{slidersClass}}" style="left: {{offset.leftSliderX}}%; top: {{offset.leftSliderY}}%;{{#unless activeElements.leftSlider}} display: none;{{/unless}}">
+        {{!-- Изображения слайдера (фон и верхняя часть ) --}}
+        <div id="vn-left-slides">
+            <img id="vn-left-slide-back" class="vn-slide-back" src="{{slidersSet.leftSliderBack}}" style="left:{{slidersSet.leftSliderBack.offsetX}}px; top:{{slidersSet.leftSliderBack.offsetY}}px; transform: scale({{slidersSet.leftSliderBack.scale}}%);"/>
+            <img id="vn-left-slide-top" class="vn-slide-top" src="{{slidersSet.leftSlider}}" style="left:{{slidersSet.leftSlider.offsetX}}px; top:{{slidersSet.leftSlider.offsetY}}px; transform: scale({{slidersSet.leftSlider.scale}}%);"/>
+        </div>
+        {{!-- Портреты в левой части --}}
+        <div id="vn-left-portraits" class="flexrow" style="height: 0;width: 87%;left: 0;position: absolute;">
+            {{#each activeSpeakers.left as |speaker|}}
+                {{!-- Тело портрера --}}
+                <div class="vn-pBody-left vn-pBody" style="z-index:{{speaker.zIndex}};" data-id="{{speaker.id}}" data-pos="{{speaker.pos}}" data-tooltip="{{speaker.name}}{{#if speaker.title}}, {{speaker.title}}{{/if}}">
+                    {{!-- Контейнер портрета (нужен для корректного смещение и отзеркаливания для портретов в левой части) --}}
+                    <div class="vn-portrait {{#if speaker.active}}vn-main{{/if}} {{speaker.pos}}" style="z-index:{{speaker.zIndex}};transform: scaleX({{#if speaker.mirrorX}}1{{else}}-1{{/if}});{{#if speaker.widthEqualFrame}} width: 98%; height: auto;{{/if}}">
+                        {{!-- Изображение портрета --}}
+                        <img class="vn-port-left" src="{{speaker.img}}" style="left:{{speaker.offsetXl}}px; top:{{speaker.offsetY}}px; transform: scale({{speaker.scale}}%);"/>
+                    </div> 
+                    {{!-- Пустой контейнер (отображаемый контур псевдо-контейнера портрета для перетягивания нового актёра) --}}
+                    <div class="vn-pField-left vn-pField {{../pFieldClass}}"></div>
+                </div>
+            {{/each}}
+        </div>
+        {{!-- Текст слайдера --}}
+        <div id="vn-left-text" class="vn-text-box"{{#unless activeElements.leftNameBox}} style="display: none;"{{/unless}}>
+            {{!-- Имя --}}
+            <span class="vn-name"{{#unless activeElements.leftName}} style="display: none;"{{/unless}}>{{leftName}}</span>
+            {{!-- Титул/звание/т.п. --}}
+            <span class="vn-title"{{#unless activeElements.leftTitle}} style="display: none;"{{/unless}}>{{leftTitle}}</span>
+        </div>
+    </div>
+    {{!-- Портреты в правой части (полностью аналогично левой части) --}}
+    <div id="vn-right" class="{{slidersClass}}" style="right: {{offset.rightSliderX}}%; top: {{offset.rightSliderY}}%;{{#unless activeElements.rightSlider}} display: none;{{/unless}}">
+        <div id="vn-right-slides">
+            <img id="vn-right-slide-back" style="right: 0" class="vn-slide-back" src="{{slidersSet.rightSliderBack}}" style="left:{{slidersSet.rightSliderBack.offsetX}}px; top:{{slidersSet.rightSliderBack.offsetY}}px; transform: scale({{slidersSet.rightSliderBack.scale}}%);"/>
+            <img id="vn-right-slide-top" style="right: 0" class="vn-slide-top" src="{{slidersSet.rightSlider}}" style="left:{{slidersSet.rightSlider.offsetX}}px; top:{{slidersSet.rightSlider.offsetY}}px; transform: scale({{slidersSet.rightSlider.scale}}%);"/>
+        </div>
+        <div id="vn-right-portraits" class="flexrow" style="height: 0;width: 87%;right: 0;position: absolute;">
+            {{#each activeSpeakers.right as |speaker|}}
+                {{!-- Тело портрера --}}
+                <div class="vn-pBody-right vn-pBody" style="z-index:{{speaker.zIndex}};" data-id="{{speaker.id}}" data-pos="{{speaker.pos}}" data-tooltip="{{speaker.name}}{{#if speaker.title}}, {{speaker.title}}{{/if}}">
+                    {{!-- Контейнер портрета (нужен для корректного смещение и отзеркаливания для портретов в левой части) --}}
+                    <div class="vn-portrait {{#if speaker.active}}vn-main{{/if}} {{speaker.pos}}" style="z-index:{{speaker.zIndex}};transform: scaleX({{#if speaker.mirrorX}}-1{{else}}1{{/if}});{{#if speaker.widthEqualFrame}} width: 98%; height: auto;{{/if}}">
+                        {{!-- Изображение портрета --}}
+                        <img class="vn-port-right" src="{{speaker.img}}" style="left:{{speaker.offsetXr}}px; top:{{speaker.offsetY}}px; transform: scale({{speaker.scale}}%);"/>
+                    </div> 
+                    {{!-- Пустой контейнер (отображаемый контур псевдо-контейнера портрета для перетягивания нового актёра) --}}
+                    <div class="vn-pField-right vn-pField {{../pFieldClass}}"></div>
+                </div>
+            {{/each}}
+        </div>
+        <div id="vn-right-text" class="vn-text-box"{{#unless activeElements.rightNameBox}} style="display: none;"{{/unless}}>
+            <span class="vn-name"{{#unless activeElements.rightName}} style="display: none;"{{/unless}}>{{rightName}}</span>
+            <span class="vn-title"{{#unless activeElements.rightTitle}} style="display: none;"{{/unless}}>{{rightTitle}}</span>
+        </div>
+    </div>
+    {{!-- Окно редактирования --}}
+    {{#if shownElements.editWindow}}
+        <div id="vn-edit-window" class="{{editWindowClass}}" style="width: {{editWindowWidth}};">
+            {{!-- Выбор персонажа (портрета) который будет редактироваться в этом окне --}}
+            <div class="vn-ew-header">
+                <span class="aps-title" style="font-size: 1.25em;">{{localize "visual-novel-dialogues.vn-edit.portraits"}}</span>
+                <div id="vn-addActor-button" class="vn-small-button"data-tooltip="{{localize "visual-novel-dialogues.buttons.addActor"}}"><i class="fa-solid fa-user-plus vn-icon-button"></i></div>
+                <div id="vn-locationPicker-button" class="vn-small-button"data-tooltip="{{localize "visual-novel-dialogues.buttons.locationPicker"}}"><i class="fa-solid fa-images vn-icon-button"></i></div>
+                <div style="flex: 1;"></div>
+                <div id="vn-ewInfo-button" class="vn-small-button" data-tooltip="{{localize "visual-novel-dialogues.buttons.ewInfo"}}"><i class="fa-solid fa-question vn-icon-button"></i></div>
+                <div id="vn-ewClose-button" class="vn-small-button" data-tooltip="{{localize "visual-novel-dialogues.buttons.ewClose"}}"><i class="fa-solid fa-xmark vn-icon-button"></i></div>
+            </div>
+            <div class="vn-ew-portraits flexrow">
+                {{#each activeSpeakers.left as |speaker|}}
+                    <div data-pos="{{speaker.pos}}" data-id="{{speaker.id}}" class="vn-ew-slot{{#if (eq ../highlightEl speaker.pos)}} vn-hlight {{/if}}{{#if speaker.active}} vn-active{{/if}}">
+                        <img data-pos="{{speaker.pos}}" src="{{speaker.img}}" data-id="{{speaker.id}}" style="transform: scaleX({{#if speaker.mirrorX}}1{{else}}-1{{/if}});{{#unless speaker.img}}display: none;{{/unless}}"/>
+                    </div>
+                {{/each}}
+                <div class="vm-ew-mid-border"></div>
+                {{#each activeSpeakers.right as |speaker|}}
+                    <div data-pos="{{speaker.pos}}" data-id="{{speaker.id}}" class="vn-ew-slot{{#if (eq ../highlightEl speaker.pos)}} vn-hlight {{/if}}{{#if speaker.active}} vn-active{{/if}}">
+                        <img data-pos="{{speaker.pos}}" src="{{speaker.img}}" data-id="{{speaker.id}}" style="transform: scaleX({{#if speaker.mirrorX}}-1{{else}}1{{/if}});{{#unless speaker.img}}display: none;{{/unless}}"/>
+                    </div>
+                {{/each}}
+            </div>
+            {{!-- Поле смены имени редактируемого персонажа --}}
+            <h3 class="aps-title">{{localize "visual-novel-dialogues.vn-edit.name"}}</h3>
+            <div class="form-fields">
+                <input class="vn-edit-name" type="text" placeholder="{{localize "visual-novel-dialogues.placeholders.actorName"}}" value="{{editActorData.name}}">
+            </div>
+            {{!-- Поле смены титула редактируемого персонажа --}}
+            <h3 class="aps-title" style="margin-top: 9px;">{{localize "visual-novel-dialogues.vn-edit.title"}}</h3>
+            <div class="form-fields">
+                <input class="vn-edit-title" type="text" placeholder="{{localize "visual-novel-dialogues.placeholders.actorTitle"}}" value="{{editActorData.title}}">
+            </div>
+            {{!-- Поле смены масштаба и смещения редактируемого персонажа --}}
+            <div class="vn-edid-slider-container">
+                {{!-- Размер --}}
+                <div>
+                    <label>{{localize "visual-novel-dialogues.vn-edit.scale"}}</label>
+                    <div class="vn-edit-slider">
+                        <input id="vn-edit-scale" type="range" class="" name="scale" value="{{editActorData.scale}}" min="0" max="200" step="1">
+                        <span class="range-scale-value">{{editActorData.scale}}%</span>
+                    </div>
+                </div>
+                {{!-- Смещение по оси X --}}
+                <div>
+                    <label>{{localize "visual-novel-dialogues.vn-edit.offsetX"}}</label>
+                    <div class="vn-edit-slider">
+                        <input id="vn-edit-offsetX" type="range" class="" name="coordX" value="{{editActorData.offsetX}}" min="-250" max="250" step="1">
+                        <span class="range-coordX-value">{{editActorData.offsetX}}</span>
+                    </div>
+                </div>
+                {{!-- Смещение по оси Y --}}
+                <div>
+                    <label>{{localize "visual-novel-dialogues.vn-edit.offsetY"}}</label>
+                    <div class="vn-edit-slider">
+                        <input id="vn-edit-offsetY" type="range" class="" name="coordY" value="{{editActorData.offsetY}}" min="-250" max="250" step="1">
+                        <span class="range-coordY-value">{{editActorData.offsetY}}</span>
+                    </div>
+                </div>
+            </div>
+            {{!-- Дополнительные настройки --}}
+            <h3 class="aps-title" style="margin-bottom: 5px;">{{localize "visual-novel-dialogues.vn-edit.additional"}}</h3>
+            <div class="flexrow vn-edit-additional">
+                <div class="form-fields">
+                    <label for="vn-edit-mirrorX">{{localize "visual-novel-dialogues.vn-edit.mirrorX"}}</label>
+                    <input id="vn-edit-mirrorX" type="checkbox" name="mirrorX" {{#if editActorData.mirrorX}}checked{{/if}}>
+                </div>
+                <div class="form-fields">
+                    <label for="vn-edit-widthEqualFrame">{{localize "visual-novel-dialogues.vn-edit.widthEqualFrameWidth"}}</label>
+                    <input id="vn-edit-widthEqualFrame" type="checkbox" name="widthEqualFrame" {{#if editActorData.widthEqualFrame}}checked{{/if}}>
+                </div>
+            </div>
+            {{!-- Кнопки окна редактирования --}}
+            <div class="vn-edit-buttons-container">
+                <button type="button" class="vn-edit-apply">
+                    <i class="fa-solid fa-check"></i><label>{{localize "visual-novel-dialogues.vn-edit.apply-button"}}</label>
+                </button>
+                <button type="button" class="vn-edit-cancel">
+                    <i class="fa-solid fa-xmark"></i><label>{{localize "visual-novel-dialogues.vn-edit.cancel-button"}}</label>
+                </button>
+                <button type="button" class="vn-edit-zeroSettings" style="font-weight: 500" data-tooltip="{{localize "visual-novel-dialogues.vn-edit.zeroSettings"}}">
+                    <i class="fa-brands fa-creative-commons-zero"></i>
+                </button>
+                <button type="button" class="vn-edit-deleteActor" data-tooltip="{{localize "visual-novel-dialogues.vn-edit.deleteActor"}}">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    {{/if}}
+    <div id="vn-foreground" class="{{bodyClass}}" style="pointer-events: none !important;">
+        {{!-- Кнопки --}}
+        <div id="vn-unhideUI-button" class="vn-corner-button" style="{{#unless hideUI}}display: none;{{/unless}}" data-tooltip="{{localize "visual-novel-dialogues.buttons.unhideUI"}}"></div>
+        <div class="vn-buttons-container" style="display: {{#if hideUI}}none{{else}}contents{{/if}};">
+            {{!-- Соты --}}
+            <div class="vn-honeycomb flexcol" {{#unless shownElements.honeycomb}}style="display: none;"{{/unless}}>
+                <div class="vn-honeycomb-element flexrow">
+                    <div id="vn-background-button" class="vn-round-button{{#unless shownElements.locationChanges}} vn-disabled{{/unless}}" data-tooltip="{{localize "visual-novel-dialogues.buttons.changeBackground"}}"><i class="fa-solid fa-arrows-rotate vn-icon-button"></i></div>
+                    <div id="vn-settings-menu" class="vn-round-button{{#unless isGM}} vn-disabled{{/unless}}" data-tooltip="{{localize "visual-novel-dialogues.buttons.settings-menu"}}"><i class="fa-solid fa-gear vn-icon-button"></i></div>
+                </div>
+                <div class="vn-honeycomb-element flexrow">
+                    <div id="vn-editMode-button" class="vn-round-button{{#unless shownElements.editWindow}} vn-disabled{{/unless}}{{#if editMode}} vn-hlight{{/if}}" data-tooltip="{{localize "visual-novel-dialogues.buttons.edit"}}"><i class="fa-solid fa-wrench vn-icon-button"></i></div>
+                    <div id="vn-linkChanges-button" class="vn-round-button{{#unless shownElements.locationChanges}} vn-disabled{{/unless}}" data-tooltip="{{localize "visual-novel-dialogues.buttons.linkChanges"}}"><i class="fa-solid {{#if linkChanges}}fa-link{{else}}fa-link-slash{{/if}} vn-icon-button"></i></div>
+                    <div id="vn-backup-button" class="vn-round-button{{#unless shownElements.locationChanges}} vn-disabled{{/unless}}" data-tooltip="{{localize "visual-novel-dialogues.buttons.backup"}}"><i class="fa-solid fa-reply-all vn-icon-button"></i></div>
+                </div>
+                <div class="vn-honeycomb-element flexrow">
+                    <div id="vn-epicRoll-button" class="vn-round-button{{#unless (and isGM hasEpicRoll)}} vn-disabled{{/unless}}" data-tooltip="{{localize "visual-novel-dialogues.buttons.epicRoll"}}"><i class="fa-solid fa-dice vn-icon-button"></i></div>
+                    <div id="vn-effects-button" class="vn-round-button" data-tooltip="{{localize "visual-novel-dialogues.buttons.effects"}}"><i class="fa-solid fa-wand-sparkles vn-icon-button" style="font-weight: 600 !important;"></i></div>
+                </div>
+                {{#if showHintButton}}
+                    <div class="vn-honeycomb-element flexrow">
+                        <div id="vn-hint-button" class="vn-round-button" data-tooltip="{{localize "visual-novel-dialogues.buttons.hint"}}"><i class="fa-solid fa-question vn-icon-button" style="color: #c9ffbc;"></i></div>
+                    </div>
+                {{/if}}
+            </div>
+            {{!-- Правый верхний угол --}}
+            <div class="vn-back-buttons-container flexcol" style="top: 20px; right: 20px;">
+                <div class="vn-selector-container flexrow" style="flex-direction: row-reverse; margin-bottom: 10px">
+                    <div id="vn-selector-open" class="vn-mini-button" data-tooltip="{{localize "visual-novel-dialogues.buttons.selector"}}"><i class="fa-solid fa-{{#if selectorOpen}}caret-right{{else}}caret-left{{/if}} vn-icon-button"></i></div>
+                    <div class="vn-selector-body" style="display: {{#if selectorOpen}}flex{{else}}none{{/if}}">
+                        {{#each selectors as |selector|}}
+                            <div class="vn-selector-item" style="{{#unless selector.active}}display: none;{{/unless}}" data-tooltip="{{selector.name}}" data-type="{{selector.type}}"><i class="fa-solid fa-{{selector.icon}} vn-request-icon"></i></div>
+                        {{/each}}
+                    </div>
+                </div>
+                <div class="vn-player-list-container flexrow" style="flex-direction: row-reverse;">
+                    <div id="vn-player-list-open" class="vn-mini-button{{playerListGlow}}" data-tooltip="{{localize "visual-novel-dialogues.buttons.player-list"}}"><i class="fa-solid fa-{{#if playerListOpen}}caret-right{{else}}caret-left{{/if}} vn-icon-button"></i></div>
+                    <div id="vn-player-list-body" class="vn-player-list-body" style="display: {{#if playerListOpen}}flex{{else}}none{{/if}}">
+                        {{#each players as |player|}}
+                            <li class="player flexrow" data-user-id="{{player.id}}">
+                                <span class="player-active {{#if player.hidden}}inactive" style="background: #333333{{else}}active" style="background: {{player.color}}{{/if}}; border: 1px solid"></span>
+                                <span class="player-name" data-tooltip="{{player.name}}{{#if (or player.hidden (not player.active))}}{{localize "visual-novel-dialogues.placeholders.hide"}}{{/if}}" style="color: #{{#if player.active}}56d905{{else}}fd6d07{{/if}};">{{player.name}}</span>
+                            </li>
+                        {{/each}}
+                        {{#if shownElements.displayControl}}
+                            <div class="vn-player-list-showForAll">
+                                <span>{{localize "visual-novel-dialogues.contextmenu.showForAll"}}</span>
+                            </div>
+                        {{/if}}
+                    </div>
+                </div>
+            </div>
+            {{!-- Левый верхний угол --}}
+            <div class="vn-back-buttons-container flexrow" style="top: 20px; left: 20px;">
+                <div id="vn-hide-button" class="vn-square-button" data-tooltip="{{localize "visual-novel-dialogues.buttons.hide"}}"><i class="fa-solid fa-eye-slash vn-icon-button"></i></div>
+                <div id="vn-actor-button" class="vn-square-button" data-tooltip="{{localize "visual-novel-dialogues.buttons.actor"}}"><i class="fa-solid fa-user vn-icon-button"></i></div>
+                <div id="vn-hideUI-button" class="vn-square-button" data-tooltip="{{localize "visual-novel-dialogues.buttons.hideUI"}}"><i class="fa-solid fa-tv vn-icon-button"></i></div>
+                <div id="vn-hideBack-button" class="vn-square-button" data-tooltip="{{localize "visual-novel-dialogues.buttons.hideBack"}}"><i class="fa-solid fa-image vn-icon-button" style="font-weight: {{#if hideBack}}300{{else}}800{{/if}} !important;"></i></div>
+            </div>
+            {{!-- Левый нижний угол --}}
+            <div class="vn-back-buttons-container flexrow" style="bottom: 20px; left: 20px;{{#unless shownElements.requests}} display: none;{{/unless}}">
+                <div id="vn-request-first-button" class="vn-square-button" data-tooltip="{{localize "visual-novel-dialogues.buttons.requestFirst"}}"><i class="fa-regular fa-hand vn-request-icon"></i></div>
+                <div id="vn-request-second-button" class="vn-square-button" data-tooltip="{{localize "visual-novel-dialogues.buttons.requestSecond"}}"><i class="fa-solid fa-hand vn-request-icon"></i></div>
+                <div id="vn-request-third-button" class="vn-square-button" data-tooltip="{{localize "visual-novel-dialogues.buttons.requestThird"}}"><i class="fa-solid fa-hand-sparkles vn-request-icon"></i></div>
+            </div>
+            <div id="vn-request-body" class="vn-request-body flexrow" style="bottom: 0; left: 215px;">
+                {{#each requests as |request|}}
+                    <div class="vn-request-container {{editWindowClass}}" data-id="{{request.id}}">
+                        <img src="{{request.img}}"/>
+                        <img class="vn-back-request-img vn-req-level-{{request.level}}" src="modules/visual-novel-dialogues/templates/assets/request{{request.level}}.webp"/>
+                    </div>
+                {{/each}}
+            </div>
+        </div>
+    </div>
+</div>
