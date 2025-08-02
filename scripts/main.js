@@ -197,7 +197,7 @@ export class VisualNovelDialogues extends FormApplication {
 
         const data = {
             // Данные сцены
-            backgroundImage: activeLocation.backgroundImage.replace(`(`, `\\(`).replace(`)`, `\\)`),
+            backgroundImage: activeLocation.backgroundImage ? activeLocation.backgroundImage.replace(`(`, `\\(`).replace(`)`, `\\)`) : '',
             locationName: activeLocation.locationName,
             parentLocation: activeLocation.parentLocation,
             time: getTime(activeLocation.knowTime, settingData),
