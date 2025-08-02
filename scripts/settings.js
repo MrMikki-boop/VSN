@@ -358,15 +358,27 @@ async function createJournalFromLocalize(lang = game.i18n.lang) {
 
 // Панель инструментов в левой части экрана
 Hooks.on("getSceneControlButtons", (controls) => { pushControlButtons(controls) });
-Hooks.on("renderSceneControls", (controls) => {  });
+Hooks.on("renderSceneControls", (controls) => { });
 
-function pushControlButtons(controls){
-    const showToolbar = game.settings.get(C.ID, "showToolbar")
-    if (!showToolbar || !allowTo("displayControl")) return
+function pushControlButtons(controls) {
+    const showToolbar = game.settings.get(C.ID, "showToolbar");
+    if (!showToolbar || !allowTo("displayControl")) return;
 
-    const tokenButtons = controls.find(c => c.name == "token")
-    tokenButtons.tools.push(
-        {
+    // Проверяем, что controls — объект
+    if (typeof controls !== "object" || controls === null) {
+        console.error('Параметр controls не является объектом:', controls);
+        return;
+    }
+
+    // Поиск группы "tokens" для добавления инструмента
+    const tokenButtons = controls.tokens;
+    if (tokenButtons) {
+        // Убедимся, что tools — объект, если его нет, создаём пустой объект
+        if (!tokenButtons.tools || typeof tokenButtons.tools !== "object") {
+            tokenButtons.tools = {};
+        }
+        // Добавляем новый инструмент как ключ в объекте tools
+        tokenButtons.tools["openWithControlledTokens"] = {
             name: "openWithControlledTokens",
             title: game.i18n.localize(`${C.ID}.toolbar.openWithControlledTokens`),
             icon: "fas fa-users-viewfinder",
@@ -374,19 +386,23 @@ function pushControlButtons(controls){
             button: true,
             onClick: async () => {
                 const controlledActorIds = {
-                    players: canvas.tokens.controlled.filter(t => t.actor?.type == "character").map(t => t.actor?.id),
-                    npc: canvas.tokens.controlled.filter(t => t.actor?.type != "character").map(t => t.actor?.id),
-                }
-                await parseActors(controlledActorIds)
+                    players: canvas.tokens.controlled.filter(t => t.actor?.type === "character").map(t => t.actor?.id),
+                    npc: canvas.tokens.controlled.filter(t => t.actor?.type !== "character").map(t => t.actor?.id),
+                };
+                await parseActors(controlledActorIds);
             }
-        }
-    )
-  
-    controls.push({
+        };
+    } else {
+        console.warn('Группа "tokens" не найдена в controls:', controls);
+    }
+
+    // Добавляем новую группу управления в объект controls
+    controls["VisualNovelToolbar"] = {
         name: "VisualNovelToolbar",
         title: "Visual Novel toolbar",
         icon: "fas fa-users-between-lines",
         layer: "visualNovelDialogues",
+        order: 100,
         tools: [
             {
                 name: "openVN",
@@ -394,7 +410,7 @@ function pushControlButtons(controls){
                 icon: "fas fa-window-maximize",
                 visible: true,
                 button: true,
-                onClick: () => { VisualNovelDialogues.turnVN() }
+                onClick: () => { VisualNovelDialogues.turnVN(); }
             },
             {
                 name: "hiddenOpenVN",
@@ -402,9 +418,9 @@ function pushControlButtons(controls){
                 icon: "fas fa-eye-low-vision",
                 visible: true,
                 button: true,
-                onClick: () => { 
-                    ui.notifications.info(game.i18n.localize(`${C.ID}.settings.showVNOnlyForYou`))
-                    VisualNovelDialogues.turnVN([game.user.id]) 
+                onClick: () => {
+                    ui.notifications.info(game.i18n.localize(`${C.ID}.settings.showVNOnlyForYou`));
+                    VisualNovelDialogues.turnVN([game.user.id]);
                 }
             },
             {
@@ -413,50 +429,49 @@ function pushControlButtons(controls){
                 icon: "fas fa-users-rectangle",
                 visible: true,
                 button: true,
-                onClick: async () => { 
+                onClick: async () => {
                     const actorOnSceneIds = {
-                        players: canvas.tokens.placeables.filter(t => t.actor?.type == "character").map(t => t.actor?.id),
-                        npc: canvas.tokens.placeables.filter(t => t.actor?.type != "character").map(t => t.actor?.id),
-                    }
-                    await parseActors(actorOnSceneIds)
+                        players: canvas.tokens.placeables.filter(t => t.actor?.type === "character").map(t => t.actor?.id),
+                        npc: canvas.tokens.placeables.filter(t => t.actor?.type !== "character").map(t => t.actor?.id),
+                    };
+                    await parseActors(actorOnSceneIds);
                 }
             },
             {
-                // Это переделать надо. Мы открываем ДЛЯ ИГРОКОВ, а не "выбираем портреты для переноса в VN"
                 name: "openWithChoosenPlayers",
                 title: game.i18n.localize(`${C.ID}.toolbar.openWithChoosenPlayers`),
                 icon: "far fa-users-gear",
                 visible: true,
                 button: true,
                 onClick: () => {
-                    const players = game.users.filter(p=>p.active)
-                    let content = `<form class="flexcol">`
+                    const players = game.users.filter(p => p.active);
+                    let content = `<form class="flexcol">`;
                     for (let i = 0; i < players.length; i++) {
-                        const player = players[i]
+                        const player = players[i];
                         content += `
                             <div class="form-group vn-choose-players">
                                 <img src="${player.avatar}">
                                 <label for="vncp-${player.id}">${player.name}</label>
                                 <input id="vncp-${player.id}" type="checkbox" name="${player.id}" checked>
                             </div>
-                        `
+                        `;
                     }
-                    content += `</form>`
+                    content += `</form>`;
                     new Dialog({
                         title: game.i18n.localize(`${C.ID}.toolbar.openWithChoosenPlayers`),
                         content: content,
                         buttons: {
-                            sumbit: {
+                            submit: {
                                 icon: "<i class='fas fa-users'></i>",
                                 label: game.i18n.localize(`${C.ID}.toolbar.openWithChoosenPlayers`),
                                 callback: (html) => {
-                                    const checkedEls = html.find("input:checked")
-                                    const ids = Array.from(checkedEls).map(el => el.name)
-                                    VisualNovelDialogues.turnVN(ids)
+                                    const checkedEls = html.find("input:checked");
+                                    const ids = Array.from(checkedEls).map(el => el.name);
+                                    VisualNovelDialogues.turnVN(ids);
                                 }
                             }
                         }
-                    }).render(true)
+                    }).render(true);
                 }
             },
             {
@@ -465,12 +480,12 @@ function pushControlButtons(controls){
                 icon: "fas fa-people-pulling",
                 visible: true,
                 button: true,
-                onClick: () => { 
-                    VisualNovelDialogues.turnVN(game.users.filter(p=>p.active).map(p=>p.id))
-                 }
+                onClick: () => {
+                    VisualNovelDialogues.turnVN(game.users.filter(p => p.active).map(p => p.id));
+                }
             },
         ],
-    });
+    };
 }
 
 async function parseActors(actorIds) {
