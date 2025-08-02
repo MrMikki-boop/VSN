@@ -24,7 +24,7 @@ Hooks.once('init', function() {
         name: game.i18n.localize(`${C.ID}.settings.hiddenTurnVN`),
         config: true,
         editable: [
-          {key: "KeyL"}
+            {key: "KeyL"}
         ],
         onDown: () => {
         },
@@ -43,7 +43,7 @@ Hooks.once('init', function() {
         'label': game.i18n.localize(`${C.ID}.settings.selectorMenuLabel`),
         'hint': game.i18n.localize(`${C.ID}.settings.selectorMenuHint`),
         'icon': 'fas fa-gears',
-		restricted: true,
+        restricted: true,
         'type': vndSelectorMenu,
     });
     // Опции меню селектора
@@ -65,7 +65,7 @@ Hooks.once('init', function() {
         'label': game.i18n.localize(`${C.ID}.settings.permissionsLabel`),
         'hint': game.i18n.localize(`${C.ID}.settings.permissionsHint`),
         'icon': 'fas fa-shield-alt',
-		restricted: true,
+        restricted: true,
         'type': PlayersPermissions,
     })
 
@@ -75,45 +75,44 @@ Hooks.once('init', function() {
         'label': game.i18n.localize(`${C.ID}.settings.customSlidersLabel`),
         'hint': game.i18n.localize(`${C.ID}.settings.customSlidersHint`),
         'icon': 'fas fa-layer-group',
-		restricted: true,
+        restricted: true,
         'type': CustomSlidersSet,
     });
 
     const registerSettings = (key, _scope = 'world', _config = true, _type = Boolean, _default = true, _filePicker = null, reRender = false, choices = null) => {
         game.settings.register(C.ID, key, {
-        ...{
-            name: game.i18n.localize(`${C.ID}.settings.${key}`),
-            hint: game.i18n.localize(`${C.ID}.settings.${key}Hint`),
-            scope: _scope,
-            config: _config,
-            type: _type,
-            default: _default,
-            onChange: (value) => {
-                if (reRender) VisualNovelDialogues.instance.render(true)
-            }
-        }, 
-        ...(_filePicker ? {filePicker: _filePicker} : {}),
-        ...(choices ? { choices: choices } : {})
-    });
+            ...{
+                name: game.i18n.localize(`${C.ID}.settings.${key}`),
+                hint: game.i18n.localize(`${C.ID}.settings.${key}Hint`),
+                scope: _scope,
+                config: _config,
+                type: _type,
+                default: _default,
+                onChange: (value) => {
+                    if (reRender) VisualNovelDialogues.instance.render(true)
+                }
+            },
+            ...(_filePicker ? {filePicker: _filePicker} : {}),
+            ...(choices ? { choices: choices } : {})
+        });
     }
-    
+
     game.settings.registerMenu(C.ID, "restoreFromBackup", {
         name: game.i18n.localize(`${C.ID}.settings.restoreFromBackup`),
         label: game.i18n.localize(`${C.ID}.settings.restoreFromBackupLabel`),
         hint: game.i18n.localize(`${C.ID}.settings.restoreFromBackupHint`),
-		icon: 'fas fa-file-code',
-		restricted: true,
+        icon: 'fas fa-file-code',
+        restricted: true,
         type: RestoreFromBackup
     })
     game.settings.registerMenu(C.ID, "createBackup", {
         name: game.i18n.localize(`${C.ID}.settings.createBackup`),
         label: game.i18n.localize(`${C.ID}.settings.createBackupLabel`),
         hint: game.i18n.localize(`${C.ID}.settings.createBackupHint`),
-		icon: 'fas fa-file-pen',
-		restricted: true,
+        icon: 'fas fa-file-pen',
+        restricted: true,
         type: CreateBackup
     })
-
 
     // Кнопка подсказки
     registerSettings("hintButton", "world", true, Boolean, true, null, true)
@@ -139,9 +138,9 @@ Hooks.once('init', function() {
     // Смещение всех портретов по оси Y
     registerSettings("worldOffsetY", "world", true, Number, 0, null, true)
     // Количество слотов окна VN (на одной стороне)
-    registerSettings("slotCount", "world", true, Number, 4, null, true) // по умолчанию
+    registerSettings("slotCount", "world", true, Number, 4, null, true)
     // z-index окна
-    registerSettings("zIndex", "world", true, Number, 90, null, true) // по умолчанию
+    registerSettings("zIndex", "world", true, Number, 90, null, true)
     // Плейсхолдер фона
     registerSettings("backgroundPlaceholder", "world", true, String, "modules/visual-novel-dialogues/templates/assets/placeholderImage.webp", "image")
     // Дефолтная папка для поиска портретов
@@ -155,31 +154,10 @@ Hooks.once('init', function() {
     // Использование Simple Calendar для отображения времени
     registerSettings("useSimpleCalendar", "world", true, Boolean, true, null, true)
 
-
-    // СКРЫТЫЕ 
-
-    // Права игроков
+    // СКРЫТЫЕ
     registerSettings("playersPermissions", "world", false, Object, defaultPermissions, null, true)
-    // Наборы
     registerSettings("assetPacks", "world", false, Object, {locationPacks: [], portraitPacks: []}, null, true)
-    // Штука
     registerSettings("showNewThingyDialog", "client", false, Boolean, true)
-
-    /*
-        Внутри штуки
-        {
-            name: Страд ёпт
-            id: udahsfgkasdbf
-            ids: []
-        }
-    */
-    /*
-        JSON для экспорта/испорта
-        {
-            name: Страд ёпт
-            paths: []
-        }
-    */
 
     globalThis.ui.VisualNovel = {
         updateLocalizeFromString: updateLocalizeFromString,
@@ -188,10 +166,7 @@ Hooks.once('init', function() {
     }
 });
 
-
-
 Hooks.on('setup', () => {
-
     game.settings.register(C.ID, 'style', {
         scope: 'world',
         type: Object,
@@ -201,7 +176,6 @@ Hooks.on('setup', () => {
             choosenSliderSet: "",
         }
     })
-
 
     game.settings.register(C.ID, 'presetsUI', {
         scope: 'world',
@@ -213,7 +187,7 @@ Hooks.on('setup', () => {
         }
     })
 
-    game.settings.register(C.ID, 'vnData', { 
+    game.settings.register(C.ID, 'vnData', {
         scope: 'world',
         type: Object,
         default: {
@@ -241,27 +215,27 @@ Hooks.on('setup', () => {
                 {
                     name: "Неизвестная погода",
                     icon: "fas fa-eye-slash",
-                    id: randomID()
+                    id: foundry.utils.randomID()
                 },
                 {
                     name: "Солнечно",
                     icon: "fas fa-sun",
-                    id: randomID()
+                    id: foundry.utils.randomID()
                 },
                 {
                     name: "Облачно",
                     icon: "fas fa-cloud-sun",
-                    id: randomID()
+                    id: foundry.utils.randomID()
                 },
                 {
                     name: "Туман",
                     icon: "fas fa-smog",
-                    id: randomID()
+                    id: foundry.utils.randomID()
                 },
                 {
                     name: "Ветренно",
                     icon: "fas fa-wind",
-                    id: randomID()
+                    id: foundry.utils.randomID()
                 }
             ]
         }
@@ -285,7 +259,7 @@ Hooks.on('setup', () => {
     CONFIG.Canvas.layers.visualNovelDialogues = { layerClass: VNDLayer, group: "interface" };
 });
 
-class VNDLayer extends InteractionLayer {
+class VNDLayer extends foundry.canvas.layers.InteractionLayer {
     static LAYER_NAME = "visualNovelDialogues";
     constructor() {
         super();
@@ -298,8 +272,6 @@ class VNDLayer extends InteractionLayer {
         });
     }
 }
-
-
 
 Hooks.on("ready", async () => {
     if (!game.user.isGM) return
@@ -322,7 +294,7 @@ Hooks.on("ready", async () => {
     }
 
     // Стили
-    // document.documentElement.style.setProperty("--vsm-ui-border-color", "#44191A");
+    document.documentElement.style.setProperty("--vsm-ui-border-color", "#44191A");
 })
 
 async function updateLocalizeFromString(lang = game.i18n.lang, text) {

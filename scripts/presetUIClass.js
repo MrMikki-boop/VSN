@@ -2,30 +2,26 @@ import { Constants as C } from "./const.js";
 
 export class PresetUIClass {
     constructor(data = {}) {
-        this.id = data.id || randomID()
+        this.id = foundry.utils.randomID()
         this.name = data.name || game.i18n.localize(`${C.ID}.visualSettingsMenu.newPreset`)
         this.hotkey = null
         this._sourceData = data
 
         this.activeElements = {
-            // Слайдеры
             headerSlider: true,
             leftSlider: true,
             rightSlider: true,
-            // Внутренности заголовка
             locName: true,
             parLocName: true,
             clock: true,
             weather: true,
             temperature: true,
-            // Внутренности слайдеров
             leftNameBox: true,
             leftName: true,
             leftTitle: true,
             rightNameBox: true,
             rightName: true,
             rightTitle: true,
-            // Кнопки
             hideVN: true,
             openActor: true,
             hideUI: true,
@@ -42,7 +38,7 @@ export class PresetUIClass {
             leftSliderY: 62,
             rightSliderX: 0,
             rightSliderY: 62
-        },
+        }
         this.scale = {
             headerSlider: 100,
             leftSlider: 100,

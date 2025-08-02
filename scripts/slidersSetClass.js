@@ -2,7 +2,7 @@ import { Constants as C } from "./const.js";
 
 export class SlidersSetClass {
     constructor(data = {}) {
-        this.id = randomID()
+        this.id = foundry.utils.randomID()
         this._sourceData = data
 
         this.setName = data.setName || "Classic"

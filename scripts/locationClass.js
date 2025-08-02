@@ -2,7 +2,7 @@ import { Constants as C, requestSettingsUpdate } from "./const.js";
 
 export class VNLocation {
     constructor(data) {
-        this.id = randomID()
+        this.id = foundry.utils.randomID()
         this._sourceData = data
 
         this.locationName = data.locationName

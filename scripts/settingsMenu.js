@@ -4,15 +4,16 @@ import { SlidersSetClass } from './slidersSetClass.js';
 
 let settingCategories = {};
 export function addMenuSetting(key, category) {
-    setProperty(settingCategories, key.split(' ').join('-'), category);
+    foundry.utils.setProperty(settingCategories, key.split(' ').join('-'), category);
 }
+
 export class vndSelectorMenu extends FormApplication {
     constructor() {
         super();
         this.category = "selectorMenu";
     }
     static get defaultOptions() {
-        return mergeObject(super.defaultOptions, {
+        return foundry.utils.mergeObject(super.defaultOptions, {
             'classes': ['form'],
             'popOut': true,
             'template': `modules/${C.ID}/templates/config.html`,
@@ -26,7 +27,7 @@ export class vndSelectorMenu extends FormApplication {
     getData() {
         let generatedOptions = [];
         const _selectorArray = selectorArray();
-	    for (let setting of game.settings.settings.values()) {
+        for (let setting of game.settings.settings.values()) {
             if (setting.namespace != C.ID) continue;
             let key = setting.key.split(' ').join('-');
             if (settingCategories[key] != this.category) continue;
@@ -42,20 +43,20 @@ export class vndSelectorMenu extends FormApplication {
             s.isNumber = setting.type === Number;
             s.filePickerType = s.filePicker === true ? 'any' : s.filePicker;
             s.isButton = setting.type instanceof Object && setting.type.name != 'String';
-            s.label = ""
+            s.label = "";
             generatedOptions.push(s);
-	    }
+        }
         return {'settings': generatedOptions.sort(function (a, b) {
-            let nameA = a.name.toUpperCase();
-            let nameB = b.name.toUpperCase();
-            if (nameA > nameB) {
-                return 1;
-            } else if (nameA < nameB) {
-                return -1;
-            } else {
-                return 0;
-            }
-        })};
+                let nameA = a.name.toUpperCase();
+                let nameB = b.name.toUpperCase();
+                if (nameA > nameB) {
+                    return 1;
+                } else if (nameA < nameB) {
+                    return -1;
+                } else {
+                    return 0;
+                }
+            })};
     }
     activateListeners(html) {
         super.activateListeners(html);
@@ -73,16 +74,15 @@ export class RestoreFromBackup extends FormApplication {
     constructor() {
         super();
     }
-    
+
     static get defaultOptions() {
         const defaults = super.defaultOptions;
-
         const overrides = {
             classes: ['vn-restore-fb'],
             width: 540,
             height: "auto",
             resizable: false,
-            id: `${randomID()}`,
+            id: `${foundry.utils.randomID()}`,
             template: `modules/${C.ID}/templates/restoreFromBackup.hbs`,
             title: `RestoreFromBackup`,
             userId: game.userId,
@@ -100,12 +100,18 @@ export class RestoreFromBackup extends FormApplication {
     activateListeners(html) {
         super.activateListeners(html);
         html.find('.rfb-file-picker').on('click', async (event) => {
-            const fp = new FilePicker({classes: ["filepicker"], current: `modules/${C.ID}/settingsBackups`, type: "file", displayMode: "list", callback: async (file) => {
-                if (file) {
-                    const input = html[0].querySelector('.rfb-choose-file')
-                    input.value = decodeURI(file).replace(`%2C`, `,`)
-                };
-            }}).render();
+            const fp = new foundry.applications.apps.FilePicker.implementation({
+                classes: ["filepicker"],
+                current: `${game.data.userDataPath}/visual-novel-backups`,
+                type: "file",
+                displayMode: "list",
+                callback: async (file) => {
+                    if (file) {
+                        const input = html[0].querySelector('.rfb-choose-file')
+                        input.value = decodeURI(file).replace(`%2C`, `,`)
+                    };
+                }
+            }).render();
         })
         html.find(`.rfb-submit-button`).on('click', async (event) => {
             const file = html[0].querySelector('.rfb-choose-file').value
@@ -125,7 +131,6 @@ export class RestoreFromBackup extends FormApplication {
     async _updateObject(event, formData) {
     }
 }
-
 
 export class CreateBackup extends FormApplication {
     constructor() {
@@ -168,21 +173,18 @@ export class CustomSlidersSet extends FormApplication {
         const defaultSet = new SlidersSetClass()
         defaultSet.id = ""
         const sliderSets = [defaultSet, ...settings.sliderSets]
-
         return {groups: sliderSets};
     }
 
     activateListeners(html) {
         super.activateListeners(html);
 
-        // Выбор сета как активного
         html.find('.csn-images').on('click', async (event) => {
             const setId = event.currentTarget.parentElement.dataset.id
             const settings = foundry.utils.deepClone(game.settings.get(C.ID, 'style'))
             settings.choosenSliderSet = setId
             await game.settings.set(C.ID, 'style', settings, {change: ['choosenSliderSet']})
         })
-        // Предпросмотр сета
         html.find('.csm-preview').on('click', async (event) => {
             const settings = getSettings()
             if (settings.showVN) {
@@ -194,14 +196,13 @@ export class CustomSlidersSet extends FormApplication {
             const styleSettings = foundry.utils.deepClone(game.settings.get(C.ID, 'style'))
             const setData = styleSettings.sliderSets.find(el => el.id == setId)
             if (!setData) return
-            await new Promise((resolve) => setTimeout(resolve, 50)); // Небольшая задержка чтобы круто было блять крч чё доебался???
+            await new Promise((resolve) => setTimeout(resolve, 50));
             document.getElementById(`vn-up`).querySelector('.vn-header').src = setData.headerImg
             document.getElementById(`vn-left-slide-back`).src = setData.leftSliderBack
             document.getElementById(`vn-left-slide-top`).src = setData.leftSlider
             document.getElementById(`vn-right-slide-back`).src = setData.rightSliderBack
             document.getElementById(`vn-right-slide-top`).src = setData.rightSlider
         })
-        // Изменение настроек сета
         html.find('.csm-edit').on('click', async (event) => {
             const setId = event.currentTarget.parentElement.parentElement.dataset.id
             if (!setId) return
@@ -229,42 +230,45 @@ export class CustomSlidersSet extends FormApplication {
                 content: content,
                 buttons: {
                     common: { icon: '<i class="fas fa-check"></i>', label: game.i18n.localize(`${C.ID}.customSliders.confirm`), callback: async (html) => {
-                        const updates = {
-                            headerImg: html[0].querySelector(`input[name="headerImg"]`).value,
-                            leftSlider: html[0].querySelector(`input[name="leftSlider"]`).value,
-                            rightSlider: html[0].querySelector(`input[name="rightSlider"]`).value,
-                            leftSliderBack: html[0].querySelector(`input[name="leftSliderBack"]`).value,
-                            rightSliderBack: html[0].querySelector(`input[name="rightSliderBack"]`).value
-                        }
-                        await SlidersSetClass.updateSet(setId, updates)
-                        this.rerender()
-                    }}
+                            const updates = {
+                                headerImg: html[0].querySelector(`input[name="headerImg"]`).value,
+                                leftSlider: html[0].querySelector(`input[name="leftSlider"]`).value,
+                                rightSlider: html[0].querySelector(`input[name="rightSlider"]`).value,
+                                leftSliderBack: html[0].querySelector(`input[name="leftSliderBack"]`).value,
+                                rightSliderBack: html[0].querySelector(`input[name="rightSliderBack"]`).value
+                            }
+                            await SlidersSetClass.updateSet(setId, updates)
+                            this.rerender()
+                        }}
                 },
                 default: 'common',
-                render: (html) => { 
+                render: (html) => {
                     html.find('.aps-file-picker').on('click', async (event) => {
-                        const fp = new FilePicker({classes: ["filepicker"], type: "image", displayMode: "thumbs", callback: async (image) => {
-                            if (image) {
-                                const input = html[0].querySelector(`.css-path-field input[name="${event.currentTarget.dataset.key}"]`)
-                                input.value = image
-                                const imgEl = html[0].querySelector(`.css-path-field img[name="${event.currentTarget.dataset.key}"]`)
-                                imgEl.src = image
-                            };
-                        }}).render();
+                        const fp = new foundry.applications.apps.FilePicker.implementation({
+                            classes: ["filepicker"],
+                            type: "image",
+                            displayMode: "thumbs",
+                            callback: async (image) => {
+                                if (image) {
+                                    const input = html[0].querySelector(`.css-path-field input[name="${event.currentTarget.dataset.key}"]`)
+                                    input.value = image
+                                    const imgEl = html[0].querySelector(`.css-path-field img[name="${event.currentTarget.dataset.key}"]`)
+                                    imgEl.src = image
+                                };
+                            }
+                        }).render();
                     })
                 },
             }).render(true);
         })
-        // Добавление нового сета
         html.find('.csm-addButton').on('click', async () => {
-            const settings = deepClone(game.settings.get(C.ID, 'style'))
+            const settings = foundry.utils.deepClone(game.settings.get(C.ID, 'style'))
             settings.sliderSets.push(new SlidersSetClass())
             await game.settings.set(C.ID, 'style', settings)
             this.rerender()
         })
-        // Удаление сета
         html.find('.csm-delete-button').on('click', async (event) => {
-            const settings = deepClone(game.settings.get(C.ID, 'style'))
+            const settings = foundry.utils.deepClone(game.settings.get(C.ID, 'style'))
             settings.sliderSets = settings.sliderSets.filter(s => s.id != event.currentTarget.dataset.id)
             await game.settings.set(C.ID, 'style', settings)
             this.rerender()
@@ -307,8 +311,6 @@ export class PlayersPermissions extends FormApplication {
 
     activateListeners(html) {
         super.activateListeners(html);
-
-        // Сохранение настроек
         html.find('.pps-submit-button').on('click', async (event) => {
             const settings = foundry.utils.deepClone(game.settings.get(C.ID, 'playersPermissions'))
             const fieldEls = html[0].querySelectorAll('.permission.form-group')
@@ -324,7 +326,6 @@ export class PlayersPermissions extends FormApplication {
             })
             await game.settings.set(C.ID, 'playersPermissions', settings)
         })
-        // Сброс настроек
         html.find('.pps-reset-button').on('click', async (event) => {
             const defaultSettings = defaultPermissions
             await game.settings.set(C.ID, 'playersPermissions', defaultSettings)
@@ -348,7 +349,7 @@ export class AssetPacksSelectMenu extends FormApplication {
         this.showPortraits = showPortraits;
     }
     static get defaultOptions() {
-        return mergeObject(super.defaultOptions, {
+        return foundry.utils.mergeObject(super.defaultOptions, {
             'classes': ['form'],
             'popOut': true,
             'template': `modules/${C.ID}/templates/assetPacksSelectMenu.hbs`,
@@ -361,7 +362,7 @@ export class AssetPacksSelectMenu extends FormApplication {
     }
 
     getData() {
-        let packs = deepClone(game.settings.get(C.ID, 'assetPacks'))
+        let packs = foundry.utils.deepClone(game.settings.get(C.ID, 'assetPacks'))
         packs.portraitPacks.forEach((pack) => { pack.count = pack.ids.length })
         packs.locationPacks.forEach((pack) => { pack.count = pack.ids.length })
         return { ...packs, showLocations: this.showLocations, showPortraits: this.showPortraits };
@@ -370,7 +371,7 @@ export class AssetPacksSelectMenu extends FormApplication {
     activateListeners(html) {
         super.activateListeners(html);
         html.find('.apsm-submit-button').on('click', async () => {
-            const settings = deepClone(game.settings.get(C.ID, 'assetPacks'))
+            const settings = foundry.utils.deepClone(game.settings.get(C.ID, 'assetPacks'))
             if (this.showLocations) {
                 const checkedPortraitInputs = html[0].querySelectorAll('.apsm-input.aspm-locInput input:checked')
                 const activeIds = Array.from(checkedPortraitInputs).map(el => el.dataset.id)
