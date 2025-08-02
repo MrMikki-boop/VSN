@@ -34,6 +34,10 @@ export class ActorPicker extends FormApplication {
                 {
                     dragSelector: '.vn-ac-slot',
                 },
+                // Добавляем поддержку дропа актёров в область списка портретов
+                {
+                    dropSelector: '.ac-actor-list'
+                }
             ]
         };
         const mergedOptions = foundry.utils.mergeObject(defaults, overrides);
@@ -68,10 +72,10 @@ export class ActorPicker extends FormApplication {
             return acc
         }, {"left": [], "right": [], "center": []})
         data.activeSpeakers.right = data.activeSpeakers.right.reverse()
-        
+
         data.filters = [
             {
-                name: game.i18n.localize(`${C.ID}.actorPicker.generarFilter`), 
+                name: game.i18n.localize(`${C.ID}.actorPicker.generarFilter`),
                 list: [{name: game.i18n.localize(`${C.ID}.actorPicker.npcFilter`), id: randomID()}, {name: game.i18n.localize(`${C.ID}.actorPicker.onScene`), id: randomID()}]
             }
         ]
@@ -86,7 +90,7 @@ export class ActorPicker extends FormApplication {
             }
             return acc
         }, data.filters)
-        
+
         return { ...data };
     }
 
@@ -110,6 +114,55 @@ export class ActorPicker extends FormApplication {
         html[0].querySelectorAll('.ac-actor-list li').forEach(element => {
             element.style = `display: ${filteredIds.includes(element.dataset.id) ? 'flex' : 'none'};`
         })
+    }
+
+    // Новая функция для создания портрета из актёра
+    async _createPortraitFromActor(actor) {
+        const settings = getSettings()
+        const useTokenForPortraits = game.settings.get(C.ID, "useTokenForPortraits")
+
+        // Проверяем, существует ли уже портрет для этого актёра
+        if (settings.portraits.some(p => p.id === actor.id)) {
+            ui.notifications.warn(game.i18n.localize(`${C.ID}.actorPicker.portraitAlreadyExists`))
+            return false
+        }
+
+        // Получаем изображение для портрета
+        const getImg = (actor) => {
+            if (useTokenForPortraits) {
+                const img = actor.prototypeToken.texture.src
+                return (img && img != "icons/svg/mystery-man.svg") ? img : null
+            } else {
+                // Логика поиска изображения в папке портретов по имени актёра
+                // Эта часть может потребовать адаптации в зависимости от вашей структуры файлов
+                return actor.prototypeToken.texture.src !== "icons/svg/mystery-man.svg" ? actor.prototypeToken.texture.src : null
+            }
+        }
+
+        const portraitPath = getImg(actor)
+        if (!portraitPath) {
+            ui.notifications.error(game.i18n.localize(`${C.ID}.actorPicker.noImageFound`))
+            return false
+        }
+
+        // Создаём новый портрет
+        const newPortrait = {
+            img: portraitPath,
+            name: actor.prototypeToken.name,
+            title: "",
+            tag: getTags(actor.folder),
+            id: actor.id,
+            scale: 100,
+            offsetXl: 0,
+            offsetXr: 0,
+            offsetY: 0,
+            hasActor: true
+        }
+
+        settings.portraits.push(newPortrait)
+        await requestSettingsUpdate(settings)
+        ui.notifications.info(game.i18n.localize(`${C.ID}.actorPicker.portraitCreated`))
+        return true
     }
 
     activateListeners(html) {
@@ -229,22 +282,95 @@ export class ActorPicker extends FormApplication {
     }
 
     async _onDrop(event) {
-        const actorData = event.dataTransfer.getData('text/plain');
-        if (!actorData || actorData === "") return
-        const transferData = JSON.parse(actorData)
-        const settings = getSettings()
+        const droppedData = event.dataTransfer.getData('text/plain');
 
-        // Аналогично с EditWindow - я потом сделаю по-человечески и без "или" элемента в if снизу. Наверное.
-        if (event.target?.classList?.contains("vn-ac-slot") || event.target?.parentElement?.classList?.contains("vn-ac-slot")) {
-            settings.activeSpeakers[transferData[1]] = getPortrait(event.target.dataset.id, settings) || null
-            settings.activeSpeakers[event.target.dataset.pos] = transferData[0]
-            await requestSettingsUpdate(settings, {change: ["editPortrait"], positions: [event.target.dataset.pos, transferData[1]]})
-        } else {
+        // Проверяем, является ли дроп актёром из sidebar
+        if (droppedData.startsWith('{"type":"Actor"')) {
+            const actorData = JSON.parse(droppedData);
+            const actor = game.actors.get(actorData.uuid?.split('.')[1] || actorData.id);
+
+            if (actor && event.target.closest('.ac-actor-list')) {
+                // Создаём портрет из актёра
+                const success = await this._createPortraitFromActor(actor);
+                if (success) {
+                    ActorPicker.refresh();
+                }
+                return;
+            }
+        }
+
+        // Существующая логика для дропа портретов на слоты
+        if (!droppedData || droppedData === "") return
+
+        try {
+            const transferData = JSON.parse(droppedData)
+            const settings = getSettings()
+
+            // Аналогично с EditWindow - я потом сделаю по-человечески и без "или" элемента в if снизу. Наверное.
+            if (event.target?.classList?.contains("vn-ac-slot") || event.target?.parentElement?.classList?.contains("vn-ac-slot")) {
+                settings.activeSpeakers[transferData[1]] = getPortrait(event.target.dataset.id, settings) || null
+                settings.activeSpeakers[event.target.dataset.pos] = transferData[0]
+                await requestSettingsUpdate(settings, {change: ["editPortrait"], positions: [event.target.dataset.pos, transferData[1]]})
+            } else {
+                return false
+            }
+        } catch (e) {
+            // Если не удалось распарсить как JSON, игнорируем
+            return false;
+        }
+    }
+
+    // Новая функция для создания портрета из актёра
+    async _createPortraitFromActor(actor) {
+        const settings = getSettings()
+        const useTokenForPortraits = game.settings.get(C.ID, "useTokenForPortraits")
+
+        // Проверяем, существует ли уже портрет для этого актёра
+        if (settings.portraits.some(p => p.id === actor.id)) {
+            ui.notifications.warn(`Портрет для ${actor.name} уже существует`)
             return false
         }
+
+        // Получаем изображение для портрета
+        const getImg = (actor) => {
+            if (useTokenForPortraits) {
+                const img = actor.prototypeToken.texture.src
+                return (img && img != "icons/svg/mystery-man.svg") ? img : null
+            } else {
+                // Пытаемся найти изображение в папке портретов по имени актёра
+                // Если не найдено, используем изображение токена
+                return actor.prototypeToken.texture.src !== "icons/svg/mystery-man.svg" ? actor.prototypeToken.texture.src : null
+            }
+        }
+
+        const portraitPath = getImg(actor)
+        if (!portraitPath) {
+            ui.notifications.error(`Не найдено подходящее изображение для ${actor.name}`)
+            return false
+        }
+
+        // Создаём новый портрет
+        const newPortrait = {
+            img: portraitPath,
+            name: actor.prototypeToken.name,
+            title: "",
+            tag: getTags(actor.folder),
+            id: actor.id,
+            scale: 100,
+            offsetXl: 0,
+            offsetXr: 0,
+            offsetY: 0,
+            hasActor: true
+        }
+
+        settings.portraits.push(newPortrait)
+        await requestSettingsUpdate(settings)
+        ui.notifications.info(`Портрет для ${actor.name} успешно создан`)
+        return true
     }
 }
 
+// Остальные функции остаются без изменений
 async function fullPortraitsCheck(_actors = []) {
     let allPortraits = await FilePicker.browse("data", C.portraitFoldersPath())
     allPortraits = allPortraits.files.map(f => decodeURI(f).replace(`%2C`, `,`).replace(`${C.portraitFoldersPath()}/`, ``)).sort((a, b) => b.length - a.length)
@@ -316,7 +442,7 @@ async function fullPortraitsCheck(_actors = []) {
                 if (_oldFlag || !foundry.utils.objectsEqual(flag, newFlag)) {
                     const _temp = await updatePortrait(newFlag.id, newFlag, settings, true)
                     settings.portraits = _temp.portraits
-                } 
+                }
             }
         }
     }
