@@ -90,7 +90,7 @@ function editWindowActorUpdate(pos = "") {
 }
 
 async function autoAssignSlots(settingData) {
-    if (!game.settings.get(C.ID, "autoAssignSlots")) return;
+    if (!game.settings.get(C.ID, "autoAssignSlots") || !game.ready) return;
 
     // Используем токены сцены, если сцена активна, иначе всех актеров
     const actors = canvas.scene?.tokens?.map(t => t.actor).filter(a => a) || game.actors.contents;
