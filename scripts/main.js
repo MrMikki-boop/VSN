@@ -89,6 +89,75 @@ function editWindowActorUpdate(pos = "") {
     }
 }
 
+async function autoAssignSlots(settingData) {
+    if (!game.settings.get(C.ID, "autoAssignSlots")) return;
+
+    // Используем токены сцены, если сцена активна, иначе всех актеров
+    const actors = canvas.scene?.tokens?.map(t => t.actor).filter(a => a) || game.actors.contents;
+    const activeSpeakers = { ...settingData.activeSpeakers };
+    const slots = ["First", "Second", "Third", "Fourth", "Fifth"];
+    const leftSlots = slots.map(s => `left${s}`);
+    const rightSlots = slots.map(s => `right${s}`);
+
+    // Сохраняем существующие левые слоты (для игроков)
+    const persistentLeft = {};
+    leftSlots.forEach(slot => {
+        if (activeSpeakers[slot]?.id) {
+            persistentLeft[slot] = activeSpeakers[slot];
+        }
+    });
+
+    // Очищаем правые слоты для перераспределения
+    rightSlots.forEach(slot => {
+        delete activeSpeakers[slot];
+    });
+
+    // Распределяем персонажей: игроки -> left, NPC -> right
+    let leftIndex = Object.keys(persistentLeft).length;
+    let rightIndex = 0;
+    for (const actor of actors) {
+        const isPlayer = Object.keys(actor.ownership).some(userId => {
+            const user = game.users.get(userId);
+            return user && !user.isGM && actor.ownership[userId] >= 3;
+        });
+        const slot = isPlayer ? leftSlots[leftIndex] : rightSlots[rightIndex];
+        if (isPlayer && leftIndex < leftSlots.length && !persistentLeft[slot]) {
+            activeSpeakers[slot] = {
+                id: actor.id,
+                img: game.settings.get(C.ID, "useTokenForPortraits") ? actor.prototypeToken?.texture?.src || actor.img : actor.img,
+                name: actor.name,
+                title: "",
+                offsetX: 0,
+                offsetY: 0,
+                scale: 100,
+                mirrorX: false,
+                widthEqualFrame: game.settings.get(C.ID, "worldWidthEqualFrame")
+            };
+            leftIndex++;
+        } else if (!isPlayer && rightIndex < rightSlots.length) {
+            activeSpeakers[slot] = {
+                id: actor.id,
+                img: game.settings.get(C.ID, "useTokenForPortraits") ? actor.prototypeToken?.texture?.src || actor.img : actor.img,
+                name: actor.name,
+                title: "",
+                offsetX: 0,
+                offsetY: 0,
+                scale: 100,
+                mirrorX: false,
+                widthEqualFrame: game.settings.get(C.ID, "worldWidthEqualFrame")
+            };
+            rightIndex++;
+        }
+    }
+
+    // Сохраняем левые слоты
+    Object.assign(activeSpeakers, persistentLeft);
+
+    // Обновляем настройки
+    settingData.activeSpeakers = activeSpeakers;
+    await requestSettingsUpdate(settingData, { change: ["editActiveSpeakers"] });
+}
+
 const getActorEl = (pos) => {
     const settingData = getSettings();
     if (!pos) pos = settingData.editActiveSpeaker
@@ -132,8 +201,10 @@ export class VisualNovelDialogues extends FormApplication {
     }
 
 
-    getData() {
+    async getData() {
         const settingData = getSettings();
+        // Автоматическое распределение слотов, если включено
+        await autoAssignSlots(settingData);
         // Проверка наполненности activeSpeakers
         const _empty = getEmptyActiveSpeakers();
         settingData.activeSpeakers = foundry.utils.mergeObject(settingData.activeSpeakers, _empty, {overwrite: false});
@@ -158,7 +229,7 @@ export class VisualNovelDialogues extends FormApplication {
         if (!uiData.slotCount.right) uiData.slotCount.right = defaultSlotCount
 
         // Активные слоты
-        const numbersArr = (num) => ["First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Ninth", "Tenth"].indexOf(num)+1
+        const numbersArr = (num) => ["First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Ninth", "Tenth"].indexOf(num) + 1
         let _tempPortrait
         const worldOffsetY = game.settings.get(C.ID, "worldOffsetY")
         const worldWidthEqualFrame = game.settings.get(C.ID, "worldWidthEqualFrame")
@@ -174,7 +245,13 @@ export class VisualNovelDialogues extends FormApplication {
                     if (worldWidthEqualFrame) _tempPortrait.widthEqualFrame = true
                 }
                 const isActive = [...settingData.activeSlots.left, ...settingData.activeSlots.right]?.includes(current)
-                acc[posParts[0]][index-1] = {..._tempPortrait, zIndex: 31-index-(isActive ? 0 : 10), pos: current, index: index, active: isActive}
+                acc[posParts[0]][index - 1] = {
+                    ..._tempPortrait,
+                    zIndex: 31 - index - (isActive ? 0 : 10),
+                    pos: current,
+                    index: index,
+                    active: isActive
+                }
             }
             return acc
         }, {"left": [], "right": [], "center": []})
@@ -213,7 +290,9 @@ export class VisualNovelDialogues extends FormApplication {
             highlightEl: settingData.editActiveSpeaker,
             hideBack: settingData.hideBack,
             hideUI: settingData.hideUI,
-            requests: Object.keys(_requests).map(m => {return {id: m, img: _requests[m].img, level: _requests[m].level}}).sort((a, b) => b.level - a.level),
+            requests: Object.keys(_requests).map(m => {
+                return {id: m, img: _requests[m].img, level: _requests[m].level}
+            }).sort((a, b) => b.level - a.level),
             selectors: _selectorArray,
             selectorOpen: !!game.user.getFlag(C.ID, "selectorOpen"),
             players: deepClone(game.users.filter(u => u.active)).map(u => {
@@ -237,8 +316,8 @@ export class VisualNovelDialogues extends FormApplication {
             name: editActor?.name || "",
             title: editActor?.title || "",
             scale: editActor?.scale || 100,
-            offsetX: (editActor?.[leftCheck ? "offsetXl" : "offsetXr"])*(leftCheck ? -1 : 1) || 0,
-            offsetY: editActor?.offsetY*-1 || 0,
+            offsetX: (editActor?.[leftCheck ? "offsetXl" : "offsetXr"]) * (leftCheck ? -1 : 1) || 0,
+            offsetY: editActor?.offsetY * -1 || 0,
             mirrorX: editActor?.mirrorX || false,
             widthEqualFrame: editActor?.widthEqualFrame || false,
         }
@@ -271,7 +350,7 @@ export class VisualNovelDialogues extends FormApplication {
             bodyClass: !_addData.showVN
                 ? (backElClass.includes("vn-hidden") ? "vn-hidden" : "vn-hidden-fade") // (backElClass == "vn-hidden-fade" ? "vn-hidden" : "vn-hidden-fade")
                 : (backElClass.includes("vn-shown") ? "vn-shown" : "vn-shown-fade"), // (backElClass == "vn-shown-fade" ? "vn-shown" : "vn-shown-fade"),
-            editWindowWidth: 25+(Math.max(uiData.slotCount.left, uiData.slotCount.right)-3)*2 + "%",
+            editWindowWidth: 25 + (Math.max(uiData.slotCount.left, uiData.slotCount.right) - 3) * 2 + "%",
             editWindowClass: data.editMode ? (settingData.showVN && !data.hideUI && !game.user.getFlag(C.ID, "hideVN")
                 ? `${(editWindowClass.includes("vn-shown") ? "vn-shown" : "vn-shown-fade")} vn-pointer`
                 : editWindowClass.includes("vn-hidden") ? "vn-hidden" : "vn-hidden-fade") : "vn-hidden",
@@ -285,8 +364,12 @@ export class VisualNovelDialogues extends FormApplication {
         }
 
 
-
-        return { ...data, ..._addData, ...css, isGM: game.user.isGM, editActorData: editActorData, shownElements: shownElements, ...uiData };
+        return {
+            ...data, ..._addData, ...css,
+            isGM: game.user.isGM,
+            editActorData: editActorData,
+            shownElements: shownElements, ...uiData
+        };
     }
 
     // Активация интерфейса при запуске Foundry (./settings.js)
@@ -906,6 +989,28 @@ export class VisualNovelDialogues extends FormApplication {
                 name: name
             };
             const options = { change: ["requestAdd"], requestId: id };
+            // Автоматическое назначение в слоты для заявок
+            if (game.settings.get(C.ID, "autoAssignSlots")) {
+                const isPlayer = character && Object.keys(character.ownership).some(userId => {
+                    const user = game.users.get(userId);
+                    return user && !user.isGM && character.ownership[userId] >= 3;
+                });
+                const slot = isPlayer ? "leftFirst" : "rightFirst";
+                if (!settingData.activeSpeakers[slot] || !settingData.activeSpeakers[slot].id) {
+                    settingData.activeSpeakers[slot] = {
+                        id: id,
+                        img: img,
+                        name: name,
+                        title: "",
+                        offsetX: 0,
+                        offsetY: 0,
+                        scale: 100,
+                        mirrorX: false,
+                        widthEqualFrame: game.settings.get(C.ID, "worldWidthEqualFrame")
+                    };
+                    options.change.push("editActiveSpeakers");
+                }
+            }
             await requestSettingsUpdate(settingData, options);
         }
 
@@ -1499,7 +1604,36 @@ Hooks.on('setup', () => {
                     ;
             }
         }
+        // Восстановить сохраненные левые слоты
+        if (game.user.isGM) {
+            const persistentLeft = game.settings.get(C.ID, "persistentLeftSlots") || {};
+            settingData.activeSpeakers = { ...settingData.activeSpeakers, ...persistentLeft };
+            await game.settings.set(C.ID, "vnData", settingData);
+        }
     });
+});
+
+// Сохранять левые слоты при обновлении настроек
+Hooks.on('updateSetting', async (setting, changes) => {
+    if (setting.key === `${C.ID}.vnData` && game.user.isGM) {
+        const settingData = getSettings();
+        const leftSlots = {};
+        ["First", "Second", "Third", "Fourth", "Fifth"].forEach(s => {
+            const slot = `left${s}`;
+            if (settingData.activeSpeakers[slot]?.id) {
+                leftSlots[slot] = settingData.activeSpeakers[slot];
+            }
+        });
+        await game.settings.set(C.ID, "persistentLeftSlots", leftSlots);
+    }
+});
+
+Hooks.on('renderScene', async () => {
+    if (game.user.isGM && game.settings.get(C.ID, "autoAssignSlots")) {
+        const settingData = getSettings();
+        await autoAssignSlots(settingData);
+        VisualNovelDialogues.renderForAll();
+    }
 });
 
 Hooks.on("renderVisualNovelDialogues", () => {

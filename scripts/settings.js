@@ -153,6 +153,10 @@ Hooks.once('init', function() {
     registerSettings("monkCommonDisplay", "world", true, Boolean, true, null, true)
     // Использование Simple Calendar для отображения времени
     registerSettings("useSimpleCalendar", "world", true, Boolean, true, null, true)
+    // Сохранение левых слотов
+    registerSettings("persistentLeftSlots", "world", false, Object, {});
+    // Автоматическое распределение слотов
+    registerSettings("autoAssignSlots", "world", true, Boolean, true);
 
     // СКРЫТЫЕ
     registerSettings("playersPermissions", "world", false, Object, defaultPermissions, null, true)
