@@ -1,6 +1,6 @@
-import { Constants as C, uiButtonsIcons } from '../scripts/const.js';
-import { VisualNovelDialogues } from '../scripts/main.js';
-import { PresetUIClass } from '../scripts/presetUIClass.js';
+import {Constants as C, uiButtonsIcons} from '../scripts/const.js';
+import {VisualNovelDialogues} from '../scripts/main.js';
+import {PresetUIClass} from '../scripts/presetUIClass.js';
 
 export class VisualSettingsMenu extends FormApplication {
     constructor(mode = "home") {
@@ -8,7 +8,7 @@ export class VisualSettingsMenu extends FormApplication {
         this.mode = "home";
         this.editablePreset = null
     }
-    
+
     static get defaultOptions() {
         const defaults = super.defaultOptions;
 
@@ -32,7 +32,7 @@ export class VisualSettingsMenu extends FormApplication {
         const _mode = this.mode
 
         // UI menu
-        const presetArray = [ ...game.settings.get(C.ID, 'presetsUI').presets ]
+        const presetArray = [...game.settings.get(C.ID, 'presetsUI').presets]
         const activePresetId = foundry.utils.deepClone(game.settings.get(C.ID, 'presetsUI')).choosenPreset
         if (!this.editablePreset) this.editablePreset = activePresetId || presetArray[0]?.id || null
 
@@ -41,7 +41,9 @@ export class VisualSettingsMenu extends FormApplication {
         if (!preset.slotCount.left) preset.slotCount.left = defaultSlotCount
         if (!preset.slotCount.right) preset.slotCount.right = defaultSlotCount
 
-        presetArray.forEach((p, i) => {if (!p.hotkey) presetArray[i].hotkey = game.i18n.localize(`${C.ID}.visualSettingsMenu.hotkeyPlaceholder`)})
+        presetArray.forEach((p, i) => {
+            if (!p.hotkey) presetArray[i].hotkey = game.i18n.localize(`${C.ID}.visualSettingsMenu.hotkeyPlaceholder`)
+        })
         const pFields = {
             left: getPFields(preset.slotCount.left, preset.mainSlot.left),
             right: getPFields(preset.slotCount.right, preset.mainSlot.right).reverse(),
@@ -74,7 +76,7 @@ export class VisualSettingsMenu extends FormApplication {
                     hint: game.i18n.localize(`${C.ID}.settings.${current}Hint`),
                     value: game.settings.get(C.ID, current),
                     key: current,
-                    type: typeof(_setting.type()),
+                    type: typeof (_setting.type()),
                     filePicker: _setting.filePicker || null
                 }
                 if (_setting.choices) item.choices = Object.keys(_setting.choices).reduce((acc, current) => {
@@ -97,13 +99,13 @@ export class VisualSettingsMenu extends FormApplication {
         const modulesSettingsMenus = []
         const modulesSettingsKeys = ["monkCommonDisplay", "useSimpleCalendar"]
 
-        const settings = 
-            _mode=== "menuVisual" ? settingsArray(visualSettingsMenus, visualSettingsKeys) : 
-            _mode == "menuTech" ? settingsArray(techSettingsMenus, techSettingsKeys) :
-            _mode == "menuModules" ? settingsArray(modulesSettingsMenus, modulesSettingsKeys) :
-            null
+        const settings =
+            _mode === "menuVisual" ? settingsArray(visualSettingsMenus, visualSettingsKeys) :
+                _mode == "menuTech" ? settingsArray(techSettingsMenus, techSettingsKeys) :
+                    _mode == "menuModules" ? settingsArray(modulesSettingsMenus, modulesSettingsKeys) :
+                        null
 
-        return { showMode: _mode, pFields: pFields, data: data, ...preset, presets: presetArray, settings: settings };
+        return {showMode: _mode, pFields: pFields, data: data, ...preset, presets: presetArray, settings: settings};
     }
 
     activateListeners(html) {
@@ -133,7 +135,7 @@ export class VisualSettingsMenu extends FormApplication {
                 })
             })
         }
-        
+
 
         // Меню настроек визуала/технических настроек/настроек модулей
         if (["menuVisual", "menuTech", "menuModules"].includes(this.mode)) {
@@ -142,11 +144,16 @@ export class VisualSettingsMenu extends FormApplication {
             filePickers.forEach(filePicker => {
                 filePicker.addEventListener('click', (event) => {
                     const input = html[0].querySelector(`.vsm-filepicker-input[name="${event.currentTarget.dataset.target}"]`)
-                    new FilePicker({classes: ["filepicker"], type: event.currentTarget.dataset.type, displayMode: "thumbs", callback: async (image) => {
-                        if (image) {
-                            input.value = image
+                    new FilePicker({
+                        classes: ["filepicker"],
+                        type: event.currentTarget.dataset.type,
+                        displayMode: "thumbs",
+                        callback: async (image) => {
+                            if (image) {
+                                input.value = image
+                            }
                         }
-                    }}).render()
+                    }).render()
                 })
             })
 
@@ -168,10 +175,10 @@ export class VisualSettingsMenu extends FormApplication {
                     const settingType = el.dataset.type
                     if (settingType == "button") continue
                     const settingKey = el.dataset.key
-                    const settingValue = 
-                        settingType == "boolean" ? el.querySelector('input').checked : 
-                        settingType == "number" ? parseInt(el.querySelector('input').value) : 
-                        (el.querySelector('input')?.value || el.querySelector('select')?.value)
+                    const settingValue =
+                        settingType == "boolean" ? el.querySelector('input').checked :
+                            settingType == "number" ? parseInt(el.querySelector('input').value) :
+                                (el.querySelector('input')?.value || el.querySelector('select')?.value)
 
                     await game.settings.set(C.ID, settingKey, settingValue)
                 }
@@ -216,7 +223,7 @@ export class VisualSettingsMenu extends FormApplication {
             html[0].querySelector('.vsm-add-preset')?.addEventListener('click', async (event) => {
                 const newPresetId = await PresetUIClass.addPreset()
                 this.editablePreset = newPresetId
-                await new Promise((resolve) => setTimeout(resolve, 10)) 
+                await new Promise((resolve) => setTimeout(resolve, 10))
                 this.render()
             })
 
@@ -226,7 +233,7 @@ export class VisualSettingsMenu extends FormApplication {
                     const _id = event.currentTarget.parentElement.dataset.id
                     await PresetUIClass.deletePreset(_id)
                     if (_id == this.editablePreset) this.editablePreset = null
-                    await new Promise((resolve) => setTimeout(resolve, 10)) 
+                    await new Promise((resolve) => setTimeout(resolve, 10))
                     this.render()
                 })
             })
@@ -236,7 +243,7 @@ export class VisualSettingsMenu extends FormApplication {
                 button.addEventListener('contextmenu', async (event) => {
                     const _id = event.currentTarget.dataset.id || event.target.dataset.id
                     this.editablePreset = _id
-                    await new Promise((resolve) => setTimeout(resolve, 10)) 
+                    await new Promise((resolve) => setTimeout(resolve, 10))
                     this.render()
                 })
             })
@@ -277,10 +284,10 @@ export class VisualSettingsMenu extends FormApplication {
                     const parts = el.dataset.key.split(".")
                     if (!acc[parts[0]]) acc[parts[0]] = {}
 
-                    acc[parts[0]][parts[1]] = 
+                    acc[parts[0]][parts[1]] =
                         parts[0] == "activeElements" ? el.checked :
-                        parts[0] == "slotCount" ? parseInt(el.value) :
-                        el.value
+                            parts[0] == "slotCount" ? parseInt(el.value) :
+                                el.value
 
                     return acc
                 }, {offset: {}})
@@ -310,7 +317,7 @@ export class VisualSettingsMenu extends FormApplication {
                     const sliderType = moverReset.parentElement.dataset.slider
                     const sliderSide = sliderType.includes("right") ? "right" : "left"
                     const sliderEl = html[0].querySelector(`.vsm-move-${sliderType}`);
-                    
+
                     const preset = new PresetUIClass()
                     const offset = preset.offset
                     sliderEl.style[sliderSide] = `${offset[`${sliderType}X`]}%`

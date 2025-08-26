@@ -90,10 +90,10 @@ function editWindowActorUpdate(pos = "") {
 }
 
 async function autoAssignSlots(settingData) {
-    if (!game.settings.get(C.ID, "autoAssignSlots") || !game.ready) return;
+    if (!game.settings.get(C.ID, "autoAssignSlots")) return;
 
-    // Используем токены сцены, если сцена активна, иначе всех актеров
-    const actors = canvas.scene?.tokens?.map(t => t.actor).filter(a => a) || game.actors.contents;
+    // Используем токены только с активной сцены, если она есть
+    const actors = canvas.scene ? canvas.scene.tokens.map(t => t.actor).filter(a => a) : [];
     const activeSpeakers = { ...settingData.activeSpeakers };
     const slots = ["First", "Second", "Third", "Fourth", "Fifth"];
     const leftSlots = slots.map(s => `left${s}`);
@@ -107,55 +107,64 @@ async function autoAssignSlots(settingData) {
         }
     });
 
-    // Очищаем правые слоты для перераспределения
-    rightSlots.forEach(slot => {
-        delete activeSpeakers[slot];
-    });
-
-    // Распределяем персонажей: игроки -> left, NPC -> right
-    let leftIndex = Object.keys(persistentLeft).length;
-    let rightIndex = 0;
-    for (const actor of actors) {
-        const isPlayer = Object.keys(actor.ownership).some(userId => {
-            const user = game.users.get(userId);
-            return user && !user.isGM && actor.ownership[userId] >= 3;
+    // Очищаем левые и правые слоты, если есть активная сцена
+    if (canvas.scene) {
+        leftSlots.forEach(slot => {
+            if (!persistentLeft[slot]) delete activeSpeakers[slot];
         });
-        const slot = isPlayer ? leftSlots[leftIndex] : rightSlots[rightIndex];
-        if (isPlayer && leftIndex < leftSlots.length && !persistentLeft[slot]) {
-            activeSpeakers[slot] = {
-                id: actor.id,
-                img: game.settings.get(C.ID, "useTokenForPortraits") ? actor.prototypeToken?.texture?.src || actor.img : actor.img,
-                name: actor.name,
-                title: "",
-                offsetX: 0,
-                offsetY: 0,
-                scale: 100,
-                mirrorX: false,
-                widthEqualFrame: game.settings.get(C.ID, "worldWidthEqualFrame")
-            };
-            leftIndex++;
-        } else if (!isPlayer && rightIndex < rightSlots.length) {
-            activeSpeakers[slot] = {
-                id: actor.id,
-                img: game.settings.get(C.ID, "useTokenForPortraits") ? actor.prototypeToken?.texture?.src || actor.img : actor.img,
-                name: actor.name,
-                title: "",
-                offsetX: 0,
-                offsetY: 0,
-                scale: 100,
-                mirrorX: false,
-                widthEqualFrame: game.settings.get(C.ID, "worldWidthEqualFrame")
-            };
-            rightIndex++;
+        rightSlots.forEach(slot => {
+            delete activeSpeakers[slot];
+        });
+    }
+
+    // Распределяем персонажей только если есть активная сцена
+    if (canvas.scene) {
+        let leftIndex = 0;
+        let rightIndex = 0;
+        for (const actor of actors) {
+            const isPlayer = Object.keys(actor.ownership).some(userId => {
+                const user = game.users.get(userId);
+                return user && !user.isGM && actor.ownership[userId] >= 3;
+            });
+            const slot = isPlayer ? leftSlots[leftIndex] : rightSlots[rightIndex];
+            if (isPlayer && leftIndex < leftSlots.length && !persistentLeft[slot]) {
+                activeSpeakers[slot] = {
+                    id: actor.id,
+                    img: game.settings.get(C.ID, "useTokenForPortraits") ? actor.prototypeToken?.texture?.src || actor.img : actor.img,
+                    name: actor.name,
+                    title: "",
+                    offsetX: 0,
+                    offsetY: 0,
+                    scale: 100,
+                    mirrorX: false,
+                    widthEqualFrame: game.settings.get(C.ID, "worldWidthEqualFrame")
+                };
+                leftIndex++;
+            } else if (!isPlayer && rightIndex < rightSlots.length) {
+                activeSpeakers[slot] = {
+                    id: actor.id,
+                    img: game.settings.get(C.ID, "useTokenForPortraits") ? actor.prototypeToken?.texture?.src || actor.img : actor.img,
+                    name: actor.name,
+                    title: "",
+                    offsetX: 0,
+                    offsetY: 0,
+                    scale: 100,
+                    mirrorX: false,
+                    widthEqualFrame: game.settings.get(C.ID, "worldWidthEqualFrame")
+                };
+                rightIndex++;
+            }
         }
     }
 
-    // Сохраняем левые слоты
+    // Восстанавливаем сохранённые левые слоты
     Object.assign(activeSpeakers, persistentLeft);
 
-    // Обновляем настройки
-    settingData.activeSpeakers = activeSpeakers;
-    await requestSettingsUpdate(settingData, { change: ["editActiveSpeakers"] });
+    // Обновляем настройки, если были изменения
+    if (JSON.stringify(activeSpeakers) !== JSON.stringify(settingData.activeSpeakers)) {
+        settingData.activeSpeakers = activeSpeakers;
+        await requestSettingsUpdate(settingData, { change: ["editActiveSpeakers"] });
+    }
 }
 
 async function updateSceneData(settingData) {
