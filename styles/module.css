@@ -989,6 +989,7 @@ i.vn-request-icon {
   border-radius: 8px;
   padding: 5px;
   box-shadow: 0 0 20px black;
+    text-shadow: 1px 1px 2px black, 0 0 5px black;
 }
 #vn-edit-window input.vn-hlight {
   box-shadow: 0 0 2px 2px rgba(177, 126, 33, 0.8);

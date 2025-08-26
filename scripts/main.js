@@ -865,36 +865,66 @@ export class VisualNovelDialogues extends FormApplication {
 
         /* ——— Заявки, начало ——— */
         async function request(level) {
-            if (!allowTo('requests', permSettings)) return
-            const img = game.user.character?.prototypeToken?.texture?.src
-            if (!img) {
-                ui.notifications.error(game.i18n.localize(`${C.ID}.errors.noCharacter`))
-                return
+            if (!allowTo('requests', permSettings)) return;
+
+            let img, id, name;
+            const character = game.user.character;
+            const defaultImage = "modules/visual-novel-dialogues/assets/default-request.png"; // Define a default image in your module
+
+            if (character) {
+                // Use character token image if available
+                img = character.prototypeToken?.texture?.src;
+                id = character.id;
+                name = character.name || game.user.name;
+                if (!img || img === "icons/svg/mystery-man.webp") {
+                    img = game.user.avatar; // Fallback to user avatar if token image is missing or default
+                }
+            } else {
+                // Fallback to user data if no character is selected
+                img = game.user.avatar;
+                id = game.user.id;
+                name = game.user.name;
             }
-            let settingData = getSettings()
-            const id = game.user.character.id
+
+            // Final fallback to default image if no valid image is found
+            if (!img || img === "icons/svg/mystery-man.webp") {
+                if (game.user.isGM) {
+                    img = defaultImage; // GMs use default image to avoid blocking
+                } else {
+                    ui.notifications.error(game.i18n.localize(`${C.ID}.errors.noImageAvailable`));
+                    return;
+                }
+            }
+
+            // Debug logging to diagnose image issues
+            console.log("Request Debug:", { character: !!character, img, id, name, userAvatar: game.user.avatar, tokenSrc: character?.prototypeToken?.texture?.src });
+
+            let settingData = getSettings();
             settingData.effects.requests[id] = {
                 level: level,
-                img: img
-            }
-            const options = {change: ["requestAdd"], requestId: id}
-            await requestSettingsUpdate(settingData, options)
+                img: img,
+                name: name
+            };
+            const options = { change: ["requestAdd"], requestId: id };
+            await requestSettingsUpdate(settingData, options);
         }
+
+// Добавляем обработчики на кнопки
         document.getElementById("vn-request-first-button")?.addEventListener('click', async () => {
-            await request(1)
-        })
+            await request(1);
+        });
         document.getElementById("vn-request-second-button")?.addEventListener('click', async () => {
-            await request(2)
-        })
+            await request(2);
+        });
         document.getElementById("vn-request-third-button")?.addEventListener('click', async () => {
-            await request(3)
-        })
-        const requests = html[0].querySelectorAll('.vn-request-container')
+            await request(3);
+        });
+        const requests = html[0].querySelectorAll('.vn-request-container');
         if (requests && requests.length > 0) {
             requests.forEach(request => {
-                addRequestListener(request, "click")
-                addRequestListener(request, "contextmenu")
-            })
+                addRequestListener(request, "click");
+                addRequestListener(request, "contextmenu");
+            });
         }
         /* ——— Заявки, конец ——— */
 

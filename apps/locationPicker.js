@@ -386,12 +386,11 @@ export class LocationPickerSettings extends FormApplication {
         const defaults = super.defaultOptions;
 
         const overrides = {
-            title: game.i18n.localize(`${C.ID}.locationPickerSub.altTitle`),
+            title: game.i18n.localize(`${C.ID}.locationPickerSub.altTitle`) || game.i18n.localize(`${C.ID}.locationPickerSub.title`),
             classes: ['vn-location-picker-sub'],
             width: 420,
             resizable: false,
             template: `modules/${C.ID}/templates/locationPickerSub.hbs`,
-            title: game.i18n.localize(`${C.ID}.locationPickerSub.title`),
             userId: game.userId,
             closeOnSubmit: true,
             submitOnChange: false

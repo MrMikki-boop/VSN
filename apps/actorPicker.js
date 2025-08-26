@@ -15,7 +15,7 @@ export class ActorPicker extends FormApplication {
         const defaults = super.defaultOptions;
 
         const overrides = {
-            classes: ['vn-actor-picker'],
+            classes: ['vn-actor-picker', 'z-index-1600'],
             width: 625,
             height: 750,
             resizable: false,
@@ -26,7 +26,6 @@ export class ActorPicker extends FormApplication {
             closeOnSubmit: false,
             submitOnChange: false,
             scrollY: ['.ac-actor-list'],
-            classes: ['z-index-1600'],
             dragDrop: [
                 {
                     dragSelector: '.ac-actor-list li'
@@ -116,39 +115,50 @@ export class ActorPicker extends FormApplication {
         })
     }
 
-    // Новая функция для создания портрета из актёра
+    // Функция для создания портрета из актёра с приоритетом портретного изображения
     async _createPortraitFromActor(actor) {
         const settings = getSettings()
         const useTokenForPortraits = game.settings.get(C.ID, "useTokenForPortraits")
 
         // Проверяем, существует ли уже портрет для этого актёра
         if (settings.portraits.some(p => p.id === actor.id)) {
-            ui.notifications.warn(game.i18n.localize(`${C.ID}.actorPicker.portraitAlreadyExists`))
+            ui.notifications.warn(game.i18n.localize(`${C.ID}.actorPicker.portraitAlreadyExists`) || `Портрет для ${actor.name} уже существует`)
             return false
         }
 
-        // Получаем изображение для портрета
+        // Получаем изображение для портрета с приоритетом портретного изображения
         const getImg = (actor) => {
-            if (useTokenForPortraits) {
-                const img = actor.prototypeToken.texture.src
-                return (img && img != "icons/svg/mystery-man.svg") ? img : null
+            // Если настройка указывает НЕ использовать токен для портретов,
+            // то приоритет отдается портретному изображению актёра
+            if (!useTokenForPortraits) {
+                // Сначала пытаемся взять портретное изображение актёра
+                const actorImg = actor.img
+                if (actorImg && actorImg !== "icons/svg/mystery-man.svg") {
+                    return actorImg
+                }
+
+                // Если портретного изображения нет, ищем в папке портретов по имени
+                // Эта логика может потребовать адаптации в зависимости от структуры файлов
+                // Пока используем токен как fallback
+                const tokenImg = actor.prototypeToken.texture.src
+                return (tokenImg && tokenImg !== "icons/svg/mystery-man.svg") ? tokenImg : null
             } else {
-                // Логика поиска изображения в папке портретов по имени актёра
-                // Эта часть может потребовать адаптации в зависимости от вашей структуры файлов
-                return actor.prototypeToken.texture.src !== "icons/svg/mystery-man.svg" ? actor.prototypeToken.texture.src : null
+                // Если настройка указывает использовать токен, то используем токен
+                const tokenImg = actor.prototypeToken.texture.src
+                return (tokenImg && tokenImg !== "icons/svg/mystery-man.svg") ? tokenImg : null
             }
         }
 
         const portraitPath = getImg(actor)
         if (!portraitPath) {
-            ui.notifications.error(game.i18n.localize(`${C.ID}.actorPicker.noImageFound`))
+            ui.notifications.error(game.i18n.localize(`${C.ID}.actorPicker.noImageFound`) || `Не найдено подходящее изображение для ${actor.name}`)
             return false
         }
 
         // Создаём новый портрет
         const newPortrait = {
             img: portraitPath,
-            name: actor.prototypeToken.name,
+            name: actor.prototypeToken.name || actor.name,
             title: "",
             tag: getTags(actor.folder),
             id: actor.id,
@@ -161,7 +171,7 @@ export class ActorPicker extends FormApplication {
 
         settings.portraits.push(newPortrait)
         await requestSettingsUpdate(settings)
-        ui.notifications.info(game.i18n.localize(`${C.ID}.actorPicker.portraitCreated`))
+        ui.notifications.info(game.i18n.localize(`${C.ID}.actorPicker.portraitCreated`) || `Портрет для ${actor.name} успешно создан`)
         return true
     }
 
@@ -319,74 +329,39 @@ export class ActorPicker extends FormApplication {
             return false;
         }
     }
-
-    // Новая функция для создания портрета из актёра
-    async _createPortraitFromActor(actor) {
-        const settings = getSettings()
-        const useTokenForPortraits = game.settings.get(C.ID, "useTokenForPortraits")
-
-        // Проверяем, существует ли уже портрет для этого актёра
-        if (settings.portraits.some(p => p.id === actor.id)) {
-            ui.notifications.warn(`Портрет для ${actor.name} уже существует`)
-            return false
-        }
-
-        // Получаем изображение для портрета
-        const getImg = (actor) => {
-            if (useTokenForPortraits) {
-                const img = actor.prototypeToken.texture.src
-                return (img && img != "icons/svg/mystery-man.svg") ? img : null
-            } else {
-                // Пытаемся найти изображение в папке портретов по имени актёра
-                // Если не найдено, используем изображение токена
-                return actor.prototypeToken.texture.src !== "icons/svg/mystery-man.svg" ? actor.prototypeToken.texture.src : null
-            }
-        }
-
-        const portraitPath = getImg(actor)
-        if (!portraitPath) {
-            ui.notifications.error(`Не найдено подходящее изображение для ${actor.name}`)
-            return false
-        }
-
-        // Создаём новый портрет
-        const newPortrait = {
-            img: portraitPath,
-            name: actor.prototypeToken.name,
-            title: "",
-            tag: getTags(actor.folder),
-            id: actor.id,
-            scale: 100,
-            offsetXl: 0,
-            offsetXr: 0,
-            offsetY: 0,
-            hasActor: true
-        }
-
-        settings.portraits.push(newPortrait)
-        await requestSettingsUpdate(settings)
-        ui.notifications.info(`Портрет для ${actor.name} успешно создан`)
-        return true
-    }
 }
 
-// Остальные функции остаются без изменений
+// Обновляем функцию fullPortraitsCheck для использования портретных изображений
 async function fullPortraitsCheck(_actors = []) {
     let allPortraits = await FilePicker.browse("data", C.portraitFoldersPath())
     allPortraits = allPortraits.files.map(f => decodeURI(f).replace(`%2C`, `,`).replace(`${C.portraitFoldersPath()}/`, ``)).sort((a, b) => b.length - a.length)
     const actors = (_actors.length > 0) ? _actors : game.actors.contents
     let settings = getSettings()
     const useTokenForPortraits = game.settings.get(C.ID, "useTokenForPortraits")
+
     const getImg = (actor) => {
-        if (useTokenForPortraits) {
-            const img = actor.prototypeToken.texture.src
-            return (img && img != "icons/svg/mystery-man.svg") ? img : null
-        } else {
+        if (!useTokenForPortraits) {
+            // Приоритет портретному изображению актёра
+            const actorImg = actor.img
+            if (actorImg && actorImg !== "icons/svg/mystery-man.svg") {
+                return actorImg
+            }
+
+            // Fallback: поиск в папке портретов по имени
             let img = allPortraits.find(n => actor.prototypeToken.name.toLowerCase().includes(n.toLowerCase().replace(/.[^/.]+$/, '')))
             img = img ? `${C.portraitFoldersPath()}/${img}` : null
-            return img
+            if (img) return img
+
+            // Финальный fallback: токен
+            const tokenImg = actor.prototypeToken.texture.src
+            return (tokenImg && tokenImg !== "icons/svg/mystery-man.svg") ? tokenImg : null
+        } else {
+            // Используем токен, как было изначально
+            const img = actor.prototypeToken.texture.src
+            return (img && img != "icons/svg/mystery-man.svg") ? img : null
         }
     }
+
     // Проходимся по всем актёрам
     for (let i = 0; i < actors.length; i++) {
         console.log(game.i18n.localize(`${C.ID}.actorPicker.checkingActor`), actors[i].name)
