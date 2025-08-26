@@ -1,9 +1,24 @@
-import { Constants as C, getSettings, getLocation, updatePortrait, getPortrait, selectorArray, getEmptyActiveSpeakers, getTextureSize, requestSettingsUpdate, allowTo, setFontsSize, getTime, uiButtonsIcons, useSimpleCalendar } from "./const.js";
-import { ActorPicker } from "../apps/actorPicker.js";
-import { LocationPicker, LocationPickerSettings } from "../apps/locationPicker.js";
-import { SlidersSetClass } from "./slidersSetClass.js";
-import { VisualSettingsMenu } from "../apps/visualSettingsMenu.js";
-import { PresetUIClass } from "./presetUIClass.js";
+import {
+    Constants as C,
+    getSettings,
+    getLocation,
+    updatePortrait,
+    getPortrait,
+    selectorArray,
+    getEmptyActiveSpeakers,
+    getTextureSize,
+    requestSettingsUpdate,
+    allowTo,
+    setFontsSize,
+    getTime,
+    uiButtonsIcons,
+    useSimpleCalendar
+} from "./const.js";
+import {ActorPicker} from "../apps/actorPicker.js";
+import {LocationPicker, LocationPickerSettings} from "../apps/locationPicker.js";
+import {SlidersSetClass} from "./slidersSetClass.js";
+import {VisualSettingsMenu} from "../apps/visualSettingsMenu.js";
+import {PresetUIClass} from "./presetUIClass.js";
 
 const _getTemperatureColor = (temperature) => {
     if (!temperature) {
@@ -14,7 +29,7 @@ const _getTemperatureColor = (temperature) => {
         color2: {red: 85, green: 255, blue: 0},
         color3: {red: 255, green: 30, blue: 0},
     }
-    let fade = (temperature+100)/100;
+    let fade = (temperature + 100) / 100;
     if (fade >= 1) {
         fade -= 1;
         colors.color1 = {red: 85, green: 255, blue: 0};
@@ -65,10 +80,10 @@ function editWindowActorUpdate(pos = "") {
         // Смещение и масштаб
         editWindow.querySelector(`.range-scale-value`).textContent = scale
         document.getElementById(`vn-edit-scale`).value = scale
-        editWindow.querySelector(`.range-coordX-value`).textContent = offsetX*(_isLeft ? -1 : 1)
-        document.getElementById(`vn-edit-offsetX`).value = offsetX*(_isLeft ? -1 : 1)
-        editWindow.querySelector(`.range-coordY-value`).textContent = offsetY*-1
-        document.getElementById(`vn-edit-offsetY`).value = offsetY*-1
+        editWindow.querySelector(`.range-coordX-value`).textContent = offsetX * (_isLeft ? -1 : 1)
+        document.getElementById(`vn-edit-offsetX`).value = offsetX * (_isLeft ? -1 : 1)
+        editWindow.querySelector(`.range-coordY-value`).textContent = offsetY * -1
+        document.getElementById(`vn-edit-offsetY`).value = offsetY * -1
         // Дополнительные настройки
         document.getElementById("vn-edit-mirrorX").checked = activeSpeaker.mirrorX
         document.getElementById("vn-edit-widthEqualFrame").checked = activeSpeaker.widthEqualFrame
@@ -97,6 +112,7 @@ const getActorEl = (pos) => {
 
 export class VisualNovelDialogues extends FormApplication {
     static instance = null;
+
     constructor() {
         super();
     }
@@ -158,7 +174,7 @@ export class VisualNovelDialogues extends FormApplication {
         if (!uiData.slotCount.right) uiData.slotCount.right = defaultSlotCount
 
         // Активные слоты
-        const numbersArr = (num) => ["First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Ninth", "Tenth"].indexOf(num)+1
+        const numbersArr = (num) => ["First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Ninth", "Tenth"].indexOf(num) + 1
         let _tempPortrait
         const worldOffsetY = game.settings.get(C.ID, "worldOffsetY")
         const worldWidthEqualFrame = game.settings.get(C.ID, "worldWidthEqualFrame")
@@ -174,7 +190,13 @@ export class VisualNovelDialogues extends FormApplication {
                     if (worldWidthEqualFrame) _tempPortrait.widthEqualFrame = true
                 }
                 const isActive = [...settingData.activeSlots.left, ...settingData.activeSlots.right]?.includes(current)
-                acc[posParts[0]][index-1] = {..._tempPortrait, zIndex: 31-index-(isActive ? 0 : 10), pos: current, index: index, active: isActive}
+                acc[posParts[0]][index - 1] = {
+                    ..._tempPortrait,
+                    zIndex: 31 - index - (isActive ? 0 : 10),
+                    pos: current,
+                    index: index,
+                    active: isActive
+                }
             }
             return acc
         }, {"left": [], "right": [], "center": []})
@@ -213,7 +235,9 @@ export class VisualNovelDialogues extends FormApplication {
             highlightEl: settingData.editActiveSpeaker,
             hideBack: settingData.hideBack,
             hideUI: settingData.hideUI,
-            requests: Object.keys(_requests).map(m => {return {id: m, img: _requests[m].img, level: _requests[m].level}}).sort((a, b) => b.level - a.level),
+            requests: Object.keys(_requests).map(m => {
+                return {id: m, img: _requests[m].img, level: _requests[m].level}
+            }).sort((a, b) => b.level - a.level),
             selectors: _selectorArray,
             selectorOpen: !!game.user.getFlag(C.ID, "selectorOpen"),
             players: deepClone(game.users.filter(u => u.active)).map(u => {
@@ -237,8 +261,8 @@ export class VisualNovelDialogues extends FormApplication {
             name: editActor?.name || "",
             title: editActor?.title || "",
             scale: editActor?.scale || 100,
-            offsetX: (editActor?.[leftCheck ? "offsetXl" : "offsetXr"])*(leftCheck ? -1 : 1) || 0,
-            offsetY: editActor?.offsetY*-1 || 0,
+            offsetX: (editActor?.[leftCheck ? "offsetXl" : "offsetXr"]) * (leftCheck ? -1 : 1) || 0,
+            offsetY: editActor?.offsetY * -1 || 0,
             mirrorX: editActor?.mirrorX || false,
             widthEqualFrame: editActor?.widthEqualFrame || false,
         }
@@ -271,7 +295,7 @@ export class VisualNovelDialogues extends FormApplication {
             bodyClass: !_addData.showVN
                 ? (backElClass.includes("vn-hidden") ? "vn-hidden" : "vn-hidden-fade") // (backElClass == "vn-hidden-fade" ? "vn-hidden" : "vn-hidden-fade") 
                 : (backElClass.includes("vn-shown") ? "vn-shown" : "vn-shown-fade"), // (backElClass == "vn-shown-fade" ? "vn-shown" : "vn-shown-fade"),
-            editWindowWidth: 25+(Math.max(uiData.slotCount.left, uiData.slotCount.right)-3)*2 + "%",
+            editWindowWidth: 25 + (Math.max(uiData.slotCount.left, uiData.slotCount.right) - 3) * 2 + "%",
             editWindowClass: data.editMode ? (settingData.showVN && !data.hideUI && !game.user.getFlag(C.ID, "hideVN")
                 ? `${(editWindowClass.includes("vn-shown") ? "vn-shown" : "vn-shown-fade")} vn-pointer`
                 : editWindowClass.includes("vn-hidden") ? "vn-hidden" : "vn-hidden-fade") : "vn-hidden",
@@ -285,8 +309,12 @@ export class VisualNovelDialogues extends FormApplication {
         }
 
 
-
-        return { ...data, ..._addData, ...css, isGM: game.user.isGM, editActorData: editActorData, shownElements: shownElements, ...uiData };
+        return {
+            ...data, ..._addData, ...css,
+            isGM: game.user.isGM,
+            editActorData: editActorData,
+            shownElements: shownElements, ...uiData
+        };
     }
 
     // Активация интерфейса при запуске Foundry (./settings.js)
@@ -338,7 +366,8 @@ export class VisualNovelDialogues extends FormApplication {
                     },
                     ok: {
                         label: game.i18n.localize(`${C.ID}.newThingy.ok`),
-                        callback: () => {}
+                        callback: () => {
+                        }
                     }
                 },
                 default: "ok"
@@ -369,6 +398,7 @@ export class VisualNovelDialogues extends FormApplication {
                 ui.notifications.info(game.i18n.localize(`${C.ID}.errors.noSheet`))
             }
         })
+
         // - Скрыть интерфейс VN
         function localHideUI(hideUI) {
             const settingData = getSettings()
@@ -382,6 +412,7 @@ export class VisualNovelDialogues extends FormApplication {
                 el.classList.toggle('vn-shown-slide', !hideUI)
             })
         }
+
         document.getElementById('vn-hideUI-button')?.addEventListener('click', async (event) => {
             if (game.user.isGM) {
                 const settings = getSettings()
@@ -413,7 +444,19 @@ export class VisualNovelDialogues extends FormApplication {
             el.addEventListener('click', async (event) => {
                 event.preventDefault();
                 // I know this is so fucking wrong, I just want to end this
-                const _type = {"ChatMessages": "chat","Combats": "combat","Scenes": "scenes","Actors": "actors","Items": "items","JournalEntries": "journal","RollTables": "tables","CardsPlural": "cards","Playlists": "playlists","TabCompendium": "compendium","Settings": "settings"}
+                const _type = {
+                    "ChatMessages": "chat",
+                    "Combats": "combat",
+                    "Scenes": "scenes",
+                    "Actors": "actors",
+                    "Items": "items",
+                    "JournalEntries": "journal",
+                    "RollTables": "tables",
+                    "CardsPlural": "cards",
+                    "Playlists": "playlists",
+                    "TabCompendium": "compendium",
+                    "Settings": "settings"
+                }
                 const tabApp = ui[_type[event.currentTarget.dataset.type]];
                 if (!tabApp) return;
                 tabApp.renderPopout(tabApp);
@@ -448,14 +491,21 @@ export class VisualNovelDialogues extends FormApplication {
         // - Сменить фон
         document.getElementById('vn-background-button')?.addEventListener('click', async (event) => {
             if (!allowTo('locationChanges', permSettings)) return
-            new FilePicker({classes: ["filepicker"], current: C.portraitFoldersPath(), type: "image", displayMode: "thumbs", callback: async (image) => {
+            new FilePicker({
+                classes: ["filepicker"],
+                current: C.portraitFoldersPath(),
+                type: "image",
+                displayMode: "thumbs",
+                callback: async (image) => {
                     if (image) {
                         const settingData = getSettings()
                         const location = getLocation(settingData)
                         location.forEach(m => m.backgroundImage = image);
                         await requestSettingsUpdate(settingData, {change: ["backgroundImage"], img: image})
-                    };
-                }}).render();
+                    }
+                    ;
+                }
+            }).render();
         })
         // - Открыть меню настроек
         document.getElementById('vn-settings-menu')?.addEventListener('click', async (event) => {
@@ -523,9 +573,8 @@ export class VisualNovelDialogues extends FormApplication {
             new Dialog({
                 title: game.i18n.localize(`${C.ID}.dialogues.globalGuideTitle`),
                 content: game.settings.get(C.ID, "globalGuideLocalization")[game.i18n.lang] || game.settings.get(C.ID, "globalGuideLocalization").en,
-                buttons: {
-                },
-            }).render(true, {width: window.innerWidth*0.70, height: window.innerHeight*0.90})
+                buttons: {},
+            }).render(true, {width: window.innerWidth * 0.70, height: window.innerHeight * 0.90})
         })
         /* ——— Активные (круглые маленькие) кнопки, конец ——— */
 
@@ -547,8 +596,7 @@ export class VisualNovelDialogues extends FormApplication {
             new Dialog({
                 title: game.i18n.localize(`${C.ID}.dialogues.editWindowTitle`),
                 content: game.i18n.localize(`${C.ID}.dialogues.editWindowHint`),
-                buttons: {
-                },
+                buttons: {},
             }).render(true)
         })
         // -- Закрыть окно редактирования (переключить режим редактирования)
@@ -576,7 +624,7 @@ export class VisualNovelDialogues extends FormApplication {
             } else if (event.shiftKey) {
                 const posSide = pos.split(/(?=[A-Z])/)[0]
                 if (settingData.activeSlots[posSide].includes(pos)) {
-                    const _sidePortraitData = settingData.activeSpeakers[posSide+'First']
+                    const _sidePortraitData = settingData.activeSpeakers[posSide + 'First']
                     settingData.slidersText[posSide][0] = _sidePortraitData?.name
                     settingData.slidersText[posSide][1] = _sidePortraitData?.title
                     settingData.activeSlots[posSide] = settingData.activeSlots[posSide].filter(slot => slot !== pos)
@@ -602,11 +650,11 @@ export class VisualNovelDialogues extends FormApplication {
             await requestSettingsUpdate(settingData, {change: ["editPortrait"], positions: [pos]})
         })
         // - подсвечивание полей ввода при изменении
-        html.find('.vn-edit-name, .vn-edit-title').on('change', function() {
+        html.find('.vn-edit-name, .vn-edit-title').on('change', function () {
             $(this).addClass('vn-hlight');
         });
         // - Изменение масштаба
-        html.find('input[name="scale"]').on('input', function(event) {
+        html.find('input[name="scale"]').on('input', function (event) {
             $(this).addClass('vn-hlight');
             const actorEl = getActorEl();
             actorEl.style.transform = `scale(${event.currentTarget.value}%)`;
@@ -614,25 +662,25 @@ export class VisualNovelDialogues extends FormApplication {
             counterEl.text(`${event.currentTarget.value}%`);
         })
         // - Перемещение портрета по оси X
-        html.find('input[name="coordX"]').on('input', function(event) {
+        html.find('input[name="coordX"]').on('input', function (event) {
             $(this).addClass('vn-hlight');
             const settingData = getSettings();
             const actorEl = getActorEl();
-            actorEl.style.left = `${event.currentTarget.value*(settingData.editActiveSpeaker.includes("left") ? -1 : 1)}px`;
+            actorEl.style.left = `${event.currentTarget.value * (settingData.editActiveSpeaker.includes("left") ? -1 : 1)}px`;
             const counterEl = html.find(`.range-coordX-value`);
             counterEl.text(event.currentTarget.value);
         })
         // - Перемещение портрета по оси Y
-        html.find('input[name="coordY"]').on('input', function(event) {
+        html.find('input[name="coordY"]').on('input', function (event) {
             $(this).addClass('vn-hlight');
             const actorEl = getActorEl();
-            actorEl.style.top = `${(event.currentTarget.value*-1) - game.settings.get(C.ID, "worldOffsetY")}px`;
+            actorEl.style.top = `${(event.currentTarget.value * -1) - game.settings.get(C.ID, "worldOffsetY")}px`;
             const counterEl = html.find(`.range-coordY-value`);
             counterEl.text(event.currentTarget.value);
         })
         // - Дополнительные настройки
         // -- Отразить портрет по оси X
-        html.find('input[name="mirrorX"]').on('change', function(event) {
+        html.find('input[name="mirrorX"]').on('change', function (event) {
             if (!allowTo("editWindow", permSettings)) return
             event.target.parentElement.classList.add('vn-hlight');
             const settingData = getSettings();
@@ -641,7 +689,7 @@ export class VisualNovelDialogues extends FormApplication {
             actorBodyEl.style.transform = actorBodyEl.style.transform.replace(/-?1/, match => match === "1" ? "-1" : "1")
         })
         // -- Ширина портрета = ширине рамки
-        html.find('input[name="widthEqualFrame"]').on('change', function(event) {
+        html.find('input[name="widthEqualFrame"]').on('change', function (event) {
             if (!allowTo("editWindow", permSettings)) return
             event.target.parentElement.classList.add('vn-hlight');
             const settingData = getSettings();
@@ -670,15 +718,18 @@ export class VisualNovelDialogues extends FormApplication {
             portraitData.title = html[0].querySelector('.vn-edit-title').value;
             // Масштаб и смещение
             portraitData.scale = parseInt(document.getElementById('vn-edit-scale').value);
-            portraitData[leftCheck ? "offsetXl" : "offsetXr"] = parseInt(document.getElementById('vn-edit-offsetX').value)*(leftCheck ? -1 : 1);
-            portraitData.offsetY = parseInt(document.getElementById('vn-edit-offsetY').value)*-1;
+            portraitData[leftCheck ? "offsetXl" : "offsetXr"] = parseInt(document.getElementById('vn-edit-offsetX').value) * (leftCheck ? -1 : 1);
+            portraitData.offsetY = parseInt(document.getElementById('vn-edit-offsetY').value) * -1;
             // Дополнительные настройки
             portraitData.mirrorX = html[0].querySelector('input[name="mirrorX"]').checked
             portraitData.widthEqualFrame = html[0].querySelector('input[name="widthEqualFrame"]').checked
 
             settingData.activeSpeakers[settingData.editActiveSpeaker] = portraitData
             settingData = await updatePortrait(portraitData.id, portraitData, settingData, true)
-            await requestSettingsUpdate(settingData, {change: ["editPortrait"], positions: [settingData.editActiveSpeaker]})
+            await requestSettingsUpdate(settingData, {
+                change: ["editPortrait"],
+                positions: [settingData.editActiveSpeaker]
+            })
         })
         // - Отмена изменений при нажатии кнопки "Отмена"
         html.find('.vn-edit-cancel').on('click', async () => {
@@ -697,7 +748,10 @@ export class VisualNovelDialogues extends FormApplication {
             if (!allowTo("editWindow", permSettings)) return
             const settingData = getSettings()
             settingData.activeSpeakers[settingData.editActiveSpeaker] = null
-            await requestSettingsUpdate(settingData, {change: ["editPortrait"], positions: [settingData.editActiveSpeaker]})
+            await requestSettingsUpdate(settingData, {
+                change: ["editPortrait"],
+                positions: [settingData.editActiveSpeaker]
+            })
         })
         /* ——— Окно EditMode, конец ——— */
 
@@ -832,7 +886,7 @@ export class VisualNovelDialogues extends FormApplication {
         });
         // Температура
         // - Изменение (локально)
-        html.find('input[name="temperature"]').on('input', function(event) {
+        html.find('input[name="temperature"]').on('input', function (event) {
             const color = _getTemperatureColor(parseInt(event.currentTarget.value));
             const thermometerEl = html.find('.vn-thermometer');
             thermometerEl[0].style.color = color;
@@ -840,7 +894,7 @@ export class VisualNovelDialogues extends FormApplication {
             if (tooltipEl.textContent.search(/[0-9]+°C/) != -1) tooltipEl.textContent = `${event.currentTarget.value}°C`;
         })
         // - Изменение (глобально)
-        html.find('input[name="temperature"]').on('change', async function(event) {
+        html.find('input[name="temperature"]').on('change', async function (event) {
             if (!allowTo('locationSubChanges', permSettings)) return
             const settingData = getSettings();
             const location = getLocation(settingData)
@@ -897,7 +951,14 @@ export class VisualNovelDialogues extends FormApplication {
             }
 
             // Debug logging to diagnose image issues
-            console.log("Request Debug:", { character: !!character, img, id, name, userAvatar: game.user.avatar, tokenSrc: character?.prototypeToken?.texture?.src });
+            console.log("Request Debug:", {
+                character: !!character,
+                img,
+                id,
+                name,
+                userAvatar: game.user.avatar,
+                tokenSrc: character?.prototypeToken?.texture?.src
+            });
 
             let settingData = getSettings();
             settingData.effects.requests[id] = {
@@ -905,7 +966,7 @@ export class VisualNovelDialogues extends FormApplication {
                 img: img,
                 name: name
             };
-            const options = { change: ["requestAdd"], requestId: id };
+            const options = {change: ["requestAdd"], requestId: id};
             await requestSettingsUpdate(settingData, options);
         }
 
@@ -964,10 +1025,12 @@ export class VisualNovelDialogues extends FormApplication {
                 })
             })
         }
+
         const backPotraitLeftEls = html[0].querySelectorAll('.vn-pField-left')
         const backPotraitRightEls = html[0].querySelectorAll('.vn-pField-right')
         swapPortraitListener(backPotraitLeftEls, "left")
         swapPortraitListener(backPotraitRightEls, "right")
+
         // Нажатие ПКМ на портрет переносит его в мини-очередь под верхушкой
         function moveToOrder(elements, side) {
             elements.forEach(element => {
@@ -992,6 +1055,7 @@ export class VisualNovelDialogues extends FormApplication {
                 })
             })
         }
+
         moveToOrder(backPotraitLeftEls, "left")
         moveToOrder(backPotraitRightEls, "right")
         // - Наведение на портрет выводит его имя на плашку
@@ -999,8 +1063,8 @@ export class VisualNovelDialogues extends FormApplication {
         [...backPotraitLeftEls, ...backPotraitRightEls].forEach(activeElement => {
             const _isLeft = activeElement.parentElement.dataset.pos.includes("left")
             const textParEl = _isLeft ? document.getElementById(`vn-left-text`) : document.getElementById(`vn-right-text`)
-            activeElement.addEventListener('mouseover', function() {
-                timeoutId = setTimeout(function() {
+            activeElement.addEventListener('mouseover', function () {
+                timeoutId = setTimeout(function () {
                     const portraitData = getPortrait(activeElement.parentElement.dataset.id)
                     if (portraitData && portraitData.name) {
                         textParEl.querySelector(`.vn-name`).textContent = portraitData.name
@@ -1009,7 +1073,7 @@ export class VisualNovelDialogues extends FormApplication {
                     clearTimeout(timeoutId);
                 }, 750);
             });
-            activeElement.addEventListener('mouseout', function() {
+            activeElement.addEventListener('mouseout', function () {
                 const settingData = getSettings()
                 const _sideMainName = game.settings.get(C.ID, "sideMainName")
                 const _text = {
@@ -1084,7 +1148,10 @@ export class VisualNovelDialogues extends FormApplication {
         } else if (event.target?.classList?.contains("vn-ew-slot") || event.target?.parentElement?.classList?.contains("vn-ew-slot")) {
             settings.activeSpeakers[transferData[1]] = getPortrait(event.target.dataset.id, settings) || null
             settings.activeSpeakers[event.target.dataset.pos] = transferData[0]
-            await requestSettingsUpdate(settings, {change: ["editPortrait"], positions: [event.target.dataset.pos, transferData[1]]})
+            await requestSettingsUpdate(settings, {
+                change: ["editPortrait"],
+                positions: [event.target.dataset.pos, transferData[1]]
+            })
         } else {
             return false
         }
@@ -1192,7 +1259,7 @@ Hooks.on("updateSetting", async (setting, value, options, userId) => {
             editWindowActorUpdate()
         }
         if (changeData.includes("editPortrait")) {              // Редактирование портрета
-            const positions = options.positions.filter(p=>!!p)
+            const positions = options.positions.filter(p => !!p)
             for (let i = 0; i < positions.length; i++) {
                 const pos = positions[i]
                 const portraitData = settingData.activeSpeakers[pos]
@@ -1230,7 +1297,8 @@ Hooks.on("updateSetting", async (setting, value, options, userId) => {
                     textParEl.querySelector(`.vn-title`).textContent = portraitData?.title || ""
                 }
                 if (allowTo('editWindow', permSettings)) editWindowActorUpdate(pos)
-            }}
+            }
+        }
         if (changeData.includes("editWindowPortChange")) {      // Изменение портрета в окне редактирования
             if (allowTo('editWindow', permSettings)) editWindowActorUpdate()
         }
@@ -1253,13 +1321,14 @@ Hooks.on("updateSetting", async (setting, value, options, userId) => {
                 wEl.className = 'vn-weather-option'
                 wEl.dataset.id = w.id
                 wEl.dataset.tooltip = w.name
-                wEl.innerHTML= `<i class="fas fa-${w.icon}"></i><span>${w.name}</span>`
+                wEl.innerHTML = `<i class="fas fa-${w.icon}"></i><span>${w.name}</span>`
                 addWeatherListener(wEl, weatherDropdownEl);
                 weatherDropdownEl.append(wEl)
             }
         }
         if (changeData.includes("temperature")) {               // Изменение температуры
-            updateTemperature(settingData)}
+            updateTemperature(settingData)
+        }
         if (changeData.includes("requestAdd")) {
             const oldEl = document.getElementById(`vn-request-body`).querySelector(`[data-id="${options.requestId}"]`)
             if (oldEl) oldEl.remove()
@@ -1288,15 +1357,15 @@ Hooks.on("updateSetting", async (setting, value, options, userId) => {
         }
         if (changeData.includes("editActiveSlots")) {           // Изменение "активных" слотов
             const isActive = (pos) => [...settingData.activeSlots.left, ...settingData.activeSlots.right].includes(pos)
-            const numbersArr = (num) => ["First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Ninth", "Tenth"].indexOf(num)+1
+            const numbersArr = (num) => ["First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Ninth", "Tenth"].indexOf(num) + 1
             document.querySelectorAll('.vn-portrait').forEach(el => {
                 const index = numbersArr(el.parentElement.dataset.pos.split(/(?=[A-Z])/)[1])
                 if (isActive(el.parentElement.dataset.pos)) {
                     el.classList.add('vn-main')
-                    el.parentElement.style["z-index"] = 89-index
+                    el.parentElement.style["z-index"] = 89 - index
                 } else {
                     el.classList.remove('vn-main')
-                    el.parentElement.style["z-index"] = 84-index
+                    el.parentElement.style["z-index"] = 84 - index
                 }
             })
             if (allowTo('editWindow', permSettings) && settingData.editMode) {
@@ -1329,7 +1398,7 @@ Hooks.on("updateSetting", async (setting, value, options, userId) => {
         }
         if (changeData.includes("editOrder")) {                  // Изменение неактивной очереди
             if (!allowTo('miniOrder', permSettings)) return
-            const orderBodyEl = options.side == "left" ? document.querySelector('.vn-mo-left') : options.side == "right"? document.querySelector('.vn-mo-right') : null
+            const orderBodyEl = options.side == "left" ? document.querySelector('.vn-mo-left') : options.side == "right" ? document.querySelector('.vn-mo-right') : null
             if (!orderBodyEl) return
             const orderEls = orderBodyEl.querySelectorAll('.vn-mo-item')
             const orderArr = settingData.order[options.side]
@@ -1422,6 +1491,7 @@ function addRequestListener(element, action) {
             await requestSettingsUpdate(settingData, options)
         })
     }
+
     async function easyDelete(event) {
         const _id = event.currentTarget.dataset.id
         const settingData = getSettings()
@@ -1451,7 +1521,10 @@ function addWeatherListener(option, dropdown) {
                     <span class="form-group">${game.i18n.localize(`${C.ID}.createWeather.textHelp`)}</span>
                 </form>`,
                 buttons: {
-                    common: { icon: '<i class=""></i>', label: game.i18n.localize(`${C.ID}.createWeather.confirm`), callback: async (html) => {
+                    common: {
+                        icon: '<i class=""></i>',
+                        label: game.i18n.localize(`${C.ID}.createWeather.confirm`),
+                        callback: async (html) => {
                             const weather = {
                                 name: html.find('input[name="name"]')[0].value || game.i18n.localize(`${C.ID}.createWeather.noName`),
                                 icon: "fas fa-" + (html.find('input[name="icon"]')[0].value || "question"),
@@ -1459,17 +1532,22 @@ function addWeatherListener(option, dropdown) {
                             }
                             settingData.weatherList.push(weather)
                             await requestSettingsUpdate(settingData, {change: ["weatherList"]})
-                        }}
+                        }
+                    }
                 },
                 default: 'common',
-                close: () => {},
+                close: () => {
+                },
             }).render(true);
         } else {
             const location = getLocation(settingData)
             location.forEach(m => {
                 m.weather = settingData.weatherList.find(w => w.id == event.currentTarget.getAttribute('data-id')) || null
             })
-            await requestSettingsUpdate(settingData, {change: ["weather"], value: event.currentTarget.getAttribute('data-id')})
+            await requestSettingsUpdate(settingData, {
+                change: ["weather"],
+                value: event.currentTarget.getAttribute('data-id')
+            })
         }
 
         dropdown.style.display = 'none';
@@ -1486,7 +1564,7 @@ function addWeatherListener(option, dropdown) {
 }
 
 Hooks.on('setup', () => {
-    game.socket.on(`module.${C.ID}`, async ({ type, settingData, options }) => {
+    game.socket.on(`module.${C.ID}`, async ({type, settingData, options}) => {
         if (type === 'renderForAll') {
             VisualNovelDialogues.instance.render(true)
         }
@@ -1587,6 +1665,7 @@ function contextMenuListener(element) {
             document.removeEventListener('click', closeDropdownOnClickOutside);
         }
     }
+
     // Закрываем все старые окошки
     const existingEls = document.querySelectorAll('.vn-players-list-dropdown')
     existingEls.forEach(el => el.remove())
