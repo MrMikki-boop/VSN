@@ -848,13 +848,18 @@ i.vn-request-icon {
     max-height: 100%;
     min-width: 310px;
     border-left: 2px groove white;
-    max-height: 100%;
 }
 
 .ac-search-input {
-    margin: 5px 0px !important;
+    height: 1.8em;
+    line-height: 1.8em;
+    padding: 2px 6px;
     width: 99% !important;
-    justify-self: center;
+    margin: 5px 0 !important;
+    border-radius: 5px;
+    border: 1px solid #666;
+    background-color: rgba(255, 255, 255, 0.8);
+    max-height: 2em;
 }
 
 .ac-actor-list {
@@ -864,6 +869,10 @@ i.vn-request-icon {
     padding: 0;
     margin-left: -2px;
     margin: 0;
+}
+
+.ac-footer {
+    max-height: 2em;
 }
 
 .ac-actor-list li {

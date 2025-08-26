@@ -94,25 +94,33 @@ export class ActorPicker extends FormApplication {
     }
 
     _filterActors(html) {
-        const filterText = html[0].querySelector('.ac-search-input').value
-        const filterList = Array.from(html[0].querySelectorAll('.ac-filter-option input:checked')).map((element) => element.getAttribute('data-name'))
-        const settings = getSettings()
-        const filterIsEmpty = filterText == "" && filterList.length == 0
+        const filterText = html[0].querySelector('.ac-search-input').value;
+        const filterList = Array.from(html[0].querySelectorAll('.ac-filter-option input:checked')).map((element) => element.getAttribute('data-name'));
+        const settings = getSettings();
+        const filterIsEmpty = filterText === "" && filterList.length === 0;
+
         const filteredIds = filterIsEmpty ? settings.portraits.map(p => p.id) : settings.portraits.reduce((acc, current) => {
-            if (filterText && current.name.toLowerCase().includes(filterText.toLowerCase())) {
-                acc.push(current)
-            }
-            if (filterList.length > 0) {
-                let filterTags = [current.tag[1]]
-                // if (actor.type == "npc") filterTags.push("НПС")
-                if (canvas.tokens.placeables.map(t => t.actor?.id).includes(current?.id)) filterTags.push(game.i18n.localize(`${C.ID}.actorPicker.onScene`))
-                if (filterList.every(e => filterTags.includes(e))) acc.push(current)
-            }
-            return acc
-        }, []).map(p => p.id)
+            // Проверяем текстовый фильтр
+            const matchesText = !filterText || current.name.toLowerCase().includes(filterText.toLowerCase());
+
+            // Формируем теги для фильтров
+            let filterTags = [current.tag[1]];
+            const actor = game.actors.get(current.id);
+            if (actor?.type === "npc") filterTags.push(game.i18n.localize(`${C.ID}.actorPicker.npcFilter`));
+            if (canvas.tokens.placeables.map(t => t.actor?.id).includes(current?.id)) filterTags.push(game.i18n.localize(`${C.ID}.actorPicker.onScene`));
+
+            // Проверяем фильтры по тегам
+            const matchesFilters = filterList.length === 0 || filterList.every(e => filterTags.includes(e));
+
+            // Добавляем портрет, если он соответствует текстовому поиску И фильтрам
+            if (matchesText && matchesFilters) acc.push(current);
+
+            return acc;
+        }, []).map(p => p.id);
+
         html[0].querySelectorAll('.ac-actor-list li').forEach(element => {
-            element.style = `display: ${filteredIds.includes(element.dataset.id) ? 'flex' : 'none'};`
-        })
+            element.style = `display: ${filteredIds.includes(element.dataset.id) ? 'flex' : 'none'};`;
+        });
     }
 
     // Функция для создания портрета из актёра с приоритетом портретного изображения
