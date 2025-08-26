@@ -149,7 +149,7 @@ export class CreateBackup extends FormApplication {
     }
     static async createBackup(app) {
         await createBackup();
-        ui.notifications.info(game.i18n.localize(`${C.ID}.settings.backupCreated`));
+        console.log(game.i18n.localize(`${C.ID}.settings.backupCreated`));
         app.close({ force: true });
     }
 }

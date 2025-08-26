@@ -84,8 +84,8 @@ export async function createBackup() {
         fileName,
         { type: "application/json" }
     );
-    await FilePicker.upload("data", backupPath, newFile, {}, { notify: true });
-    ui.notifications.info(game.i18n.localize(`${Constants.ID}.backupCreated`) + ` ${fileName}`);
+    await FilePicker.upload("data", backupPath, newFile, {}, { notify: false });
+    console.log(game.i18n.localize(`${Constants.ID}.backupCreated`) + ` ${fileName}`);
 }
 
 export const getTextureSize = async (imgPath) => {
