@@ -1,10 +1,10 @@
 {
 	"title": "Visual Novel Dialogues",
 	"description": "This module allows you to transform your social scenes using the Visual Novels Dialogues window in the style of visual novels or JRPGs, but with special functionality designed for comfortable D&D, or other TTRPGs sessions.",
-	"version": "1.5.2",
+	"version": "1.6.0",
     "compatibility": {
-      "minimum": "11",
-      "verified": "11"
+      "minimum": "13",
+      "verified": "13"
     },
   "socket": true,
 	"authors": [
@@ -35,6 +35,6 @@
   ],
   "id": "visual-novel-dialogues",
   "url": "https://boosty.to/nazgob/posts/8bca4214-a08c-46fd-87f1-11e775f8713c",
-  "manifest": "https://module.fvtt.club/s/LxigQM9qFZo3BHL/download",
-  "download": "https://module.fvtt.club/s/QXdHa4T9xQQFQCN/download"
+  "manifest": "",
+  "download": ""
 }

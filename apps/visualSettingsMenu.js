@@ -92,7 +92,7 @@ export class VisualSettingsMenu extends FormApplication {
         const visualSettingsKeys = ["hintButton", "sideMainName", "requestsSound", "worldWidthEqualFrame", "fontFamily", "worldOffsetY", "backgroundPlaceholder"]
         // Tech settings menu
         const techSettingsMenus = ["permissions", "restoreFromBackup", "createBackup"]
-        const techSettingsKeys = ["headerPortraitButton", "makesBackup", "showToolbar", "permaForcedOpen", "useTokenForPortraits", "autoAssignSlots", "portraitFoldersPath", "backgroundFoldersPath", "zIndex"];
+        const techSettingsKeys = ["headerPortraitButton", "makesBackup", "showToolbar", "permaForcedOpen", "useTokenForPortraits", "autoAssignSlots", "autoSceneData", "portraitFoldersPath", "backgroundFoldersPath", "zIndex"];
         // Modules settings menu
         const modulesSettingsMenus = []
         const modulesSettingsKeys = ["monkCommonDisplay", "useSimpleCalendar"]
@@ -180,6 +180,11 @@ export class VisualSettingsMenu extends FormApplication {
                     console.log("autoAssignSlots включено: игроки в левые слоты, NPC в правые");
                     const settingData = getSettings();
                     await autoAssignSlots(settingData);
+                }
+                if (settingKey === "autoSceneData" && settingValue) {
+                    console.log("autoSceneData включено: данные локации берутся из активной сцены");
+                    const settingData = getSettings();
+                    await updateSceneData(settingData);
                 }
                 VisualNovelDialogues.renderForAll()
                 ui.notifications.info(game.i18n.localize(`${C.ID}.visualSettingsMenu.saved`))

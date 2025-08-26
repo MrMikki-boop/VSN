@@ -158,6 +158,68 @@ async function autoAssignSlots(settingData) {
     await requestSettingsUpdate(settingData, { change: ["editActiveSpeakers"] });
 }
 
+async function updateSceneData(settingData) {
+    if (!game.settings.get(C.ID, "autoSceneData") || !canvas.scene) return;
+
+    const scene = canvas.scene;
+    const location = settingData.location || {};
+
+    // Фон из сцены
+    location.backgroundImage = scene.background?.src || game.settings.get(C.ID, "backgroundPlaceholder");
+
+    // Название из сцены
+    location.locationName = scene.name || "???";
+
+    // Погода из заметок сцены (если есть) или по умолчанию
+    let weather = settingData.weatherList.find(w => w.name === "Неизвестная погода");
+    if (scene.journal) {
+        const journalContent = scene.journal.pages.contents[0]?.text?.content || "";
+        const weatherMatch = journalContent.match(/<p>\s*Погода:\s*([^<]+)\s*<\/p>/i);
+        if (weatherMatch) {
+            const weatherName = weatherMatch[1].trim();
+            weather = settingData.weatherList.find(w => w.name === weatherName) || { name: weatherName, icon: "fas fa-question", id: foundry.utils.randomID() };
+            if (!settingData.weatherList.some(w => w.name === weatherName)) {
+                settingData.weatherList.push(weather);
+            }
+        }
+    }
+    location.weather = weather;
+
+    // Время из Simple Calendar или заметок сцены
+    if (game.settings.get(C.ID, "useSimpleCalendar") && game.modules.get("foundryvtt-simple-calendar")?.active) {
+        location.knowTime = true;
+    } else if (scene.journal) {
+        const journalContent = scene.journal.pages.contents[0]?.text?.content || "";
+        const timeMatch = journalContent.match(/<p>\s*Время:\s*([^<]+)\s*<\/p>/i);
+        location.knowTime = !!timeMatch;
+        location.time = timeMatch ? timeMatch[1].trim() : settingData.clockTime || "12:30";
+    } else {
+        location.knowTime = false;
+        location.time = settingData.clockTime || "12:30";
+    }
+
+    // Температура (если указана в заметках сцены, например, "Температура: 20°C")
+    if (scene.journal) {
+        const journalContent = scene.journal.pages.contents[0]?.text?.content || "";
+        const tempMatch = journalContent.match(/<p>\s*Температура:\s*([-]?\d+)\s*(?:°C|°F)?\s*<\/p>/i);
+        location.temperature = tempMatch ? parseInt(tempMatch[1]) : null;
+    } else {
+        location.temperature = null;
+    }
+
+    // Родительская локация (если есть в заметках, например, "Родительская локация: Город")
+    if (scene.journal) {
+        const journalContent = scene.journal.pages.contents[0]?.text?.content || "";
+        const parentMatch = journalContent.match(/<p>\s*Родительская локация:\s*([^<]+)\s*<\/p>/i);
+        location.parentLocation = parentMatch ? parentMatch[1].trim() : "";
+    } else {
+        location.parentLocation = "";
+    }
+
+    settingData.location = location;
+    await requestSettingsUpdate(settingData, { change: ["location", "weatherList"] });
+}
+
 const getActorEl = (pos) => {
     const settingData = getSettings();
     if (!pos) pos = settingData.editActiveSpeaker
@@ -205,6 +267,7 @@ export class VisualNovelDialogues extends FormApplication {
         const settingData = getSettings();
         // Автоматическое распределение слотов, если включено
         await autoAssignSlots(settingData);
+        await updateSceneData(settingData);
         // Проверка наполненности activeSpeakers
         const _empty = getEmptyActiveSpeakers();
         settingData.activeSpeakers = foundry.utils.mergeObject(settingData.activeSpeakers, _empty, {overwrite: false});
@@ -1629,9 +1692,14 @@ Hooks.on('updateSetting', async (setting, changes) => {
 });
 
 Hooks.on('renderScene', async () => {
-    if (game.user.isGM && game.settings.get(C.ID, "autoAssignSlots")) {
+    if (game.user.isGM) {
         const settingData = getSettings();
-        await autoAssignSlots(settingData);
+        if (game.settings.get(C.ID, "autoAssignSlots")) {
+            await autoAssignSlots(settingData);
+        }
+        if (game.settings.get(C.ID, "autoSceneData")) {
+            await updateSceneData(settingData);
+        }
         VisualNovelDialogues.renderForAll();
     }
 });

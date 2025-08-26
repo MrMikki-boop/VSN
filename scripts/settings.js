@@ -157,6 +157,7 @@ Hooks.once('init', function() {
     registerSettings("persistentLeftSlots", "world", false, Object, {});
     // Автоматическое распределение слотов
     registerSettings("autoAssignSlots", "world", true, Boolean, true);
+    registerSettings("autoSceneData", "world", true, Boolean, false);
 
     // СКРЫТЫЕ
     registerSettings("playersPermissions", "world", false, Object, defaultPermissions, null, true)
