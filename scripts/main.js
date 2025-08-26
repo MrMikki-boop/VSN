@@ -197,7 +197,7 @@ export class VisualNovelDialogues extends FormApplication {
 
         const data = {
             // Данные сцены
-            backgroundImage: activeLocation.backgroundImage ? activeLocation.backgroundImage.replace(`(`, `\\(`).replace(`)`, `\\)`) : '',
+            backgroundImage: activeLocation.backgroundImage.replace(`(`, `\\(`).replace(`)`, `\\)`),
             locationName: activeLocation.locationName,
             parentLocation: activeLocation.parentLocation,
             time: getTime(activeLocation.knowTime, settingData),
@@ -256,24 +256,24 @@ export class VisualNovelDialogues extends FormApplication {
             rightTitle: (_sideMainName ? data.activeSpeakers.right[data.activeSpeakers.right?.length - 1]?.title : settingData.slidersText?.right?.[1]) || "",
             timeNumbers: getTime(true, settingData).split("")
         }
-        
+
         const slidersSet = SlidersSetClass.getActiveSet()
 
         const slidersClass = document.getElementById("vn-up")?.className || "vn-hidden-slide"
         const backElClass = document.getElementById('vn-background')?.className || "vn-hidden-fade"
         const editWindowClass = document.getElementById('vn-edit-window')?.className || "vn-hidden-fade"
-        
+
         const headerFont = game.settings.get(C.ID, "fontFamily")
         const css = {
-            slidersClass: !_addData.showVN || data.hideUI 
-                ? (slidersClass.includes("vn-hidden") ? "vn-hidden" : "vn-hidden-slide") 
+            slidersClass: !_addData.showVN || data.hideUI
+                ? (slidersClass.includes("vn-hidden") ? "vn-hidden" : "vn-hidden-slide")
                 : (slidersClass.includes("vn-shown") ? "vn-shown" : "vn-shown-slide"),
             bodyClass: !_addData.showVN
                 ? (backElClass.includes("vn-hidden") ? "vn-hidden" : "vn-hidden-fade") // (backElClass == "vn-hidden-fade" ? "vn-hidden" : "vn-hidden-fade") 
                 : (backElClass.includes("vn-shown") ? "vn-shown" : "vn-shown-fade"), // (backElClass == "vn-shown-fade" ? "vn-shown" : "vn-shown-fade"),
             editWindowWidth: 25+(Math.max(uiData.slotCount.left, uiData.slotCount.right)-3)*2 + "%",
-            editWindowClass: data.editMode ? (settingData.showVN && !data.hideUI && !game.user.getFlag(C.ID, "hideVN") 
-                ? `${(editWindowClass.includes("vn-shown") ? "vn-shown" : "vn-shown-fade")} vn-pointer` 
+            editWindowClass: data.editMode ? (settingData.showVN && !data.hideUI && !game.user.getFlag(C.ID, "hideVN")
+                ? `${(editWindowClass.includes("vn-shown") ? "vn-shown" : "vn-shown-fade")} vn-pointer`
                 : editWindowClass.includes("vn-hidden") ? "vn-hidden" : "vn-hidden-fade") : "vn-hidden",
             pFieldClass: settingData.editMode && settingData.showVN && game.user.isGM ? "" : "vn-hidden",
             // ...getFontsSize(headerFont, data.locationName, data.parentLocation),
@@ -316,7 +316,7 @@ export class VisualNovelDialogues extends FormApplication {
             await requestSettingsUpdate(settings, {change: ["showVN"]})
         } else {
             const hideVN = game.user.getFlag(C.ID, "hideVN") || false;
-            ui.notifications.info(game.i18n.localize(forcedOpen 
+            ui.notifications.info(game.i18n.localize(forcedOpen
                 ? `${C.ID}.settings.${!hideVN ? "hideVN" : "dontHideVN"}`
                 : `${C.ID}.settings.hiveVNforNow`
             ));
@@ -449,13 +449,13 @@ export class VisualNovelDialogues extends FormApplication {
         document.getElementById('vn-background-button')?.addEventListener('click', async (event) => {
             if (!allowTo('locationChanges', permSettings)) return
             new FilePicker({classes: ["filepicker"], current: C.portraitFoldersPath(), type: "image", displayMode: "thumbs", callback: async (image) => {
-                if (image) {
-                    const settingData = getSettings()
-                    const location = getLocation(settingData)
-                    location.forEach(m => m.backgroundImage = image);
-                    await requestSettingsUpdate(settingData, {change: ["backgroundImage"], img: image})
-                };
-            }}).render();
+                    if (image) {
+                        const settingData = getSettings()
+                        const location = getLocation(settingData)
+                        location.forEach(m => m.backgroundImage = image);
+                        await requestSettingsUpdate(settingData, {change: ["backgroundImage"], img: image})
+                    };
+                }}).render();
         })
         // - Открыть меню настроек
         document.getElementById('vn-settings-menu')?.addEventListener('click', async (event) => {
@@ -497,7 +497,7 @@ export class VisualNovelDialogues extends FormApplication {
                 const hideBackButtonIEl = document.getElementById('vn-hideBack-button')?.querySelector('i')
 
                 const _hidden = hideBackButtonIEl.style["font-weight"] == "800"
-    
+
                 document.getElementById('vn-background-image').classList.toggle('vn-hidden', _hidden)
                 document.getElementById("vn-background-shadow").classList.toggle('vn-hidden', _hidden)
                 document.getElementById("vn-background").style["pointer-events"] = _hidden ? "none" : null
@@ -555,7 +555,7 @@ export class VisualNovelDialogues extends FormApplication {
         document.getElementById('vn-ewClose-button')?.addEventListener('click', async () => {
             if (!allowTo("editWindow", permSettings)) return
             const settingData = getSettings()
-            settingData.editMode = false; 
+            settingData.editMode = false;
             await requestSettingsUpdate(settingData, {change: ["editMode"]})
         })
         // -- Выбор активного портрета при клике ЛКМ
@@ -572,7 +572,7 @@ export class VisualNovelDialogues extends FormApplication {
                 settingData.slidersText[posSide][0] = portraitData?.name
                 settingData.slidersText[posSide][1] = portraitData?.title
                 _change = {change: ["editActiveSlots"], slotSide: posSide}
-            // Переключение "активности" выбранного портрета
+                // Переключение "активности" выбранного портрета
             } else if (event.shiftKey) {
                 const posSide = pos.split(/(?=[A-Z])/)[0]
                 if (settingData.activeSlots[posSide].includes(pos)) {
@@ -732,7 +732,7 @@ export class VisualNovelDialogues extends FormApplication {
             // - При выключенном editMode - открываем календарь
             if (!settings.editMode) {
                 if (game.modules.get('foundryvtt-simple-calendar')?.active) SimpleCalendar.api.showCalendar()
-            // - При включенном editMode - переключаем отображение времени на локации
+                // - При включенном editMode - переключаем отображение времени на локации
             } else {
                 if (!allowTo('locationSubChanges', permSettings)) return
                 const location = settings.location
@@ -766,7 +766,7 @@ export class VisualNovelDialogues extends FormApplication {
                 if (timeArray[0] === '2') {
                     maxValues[1] = 3; // Если первая цифра часа 2, то вторая цифра может быть максимум 3
                 }
-            
+
                 if (event.currentTarget.dataset.type == "plus") {
                     currentDigit = (currentDigit + 1) > maxValues[index] ? minValues[index] : currentDigit + 1;
                 } else {
@@ -817,9 +817,9 @@ export class VisualNovelDialogues extends FormApplication {
         html[0].querySelectorAll('.vn-weather-option').forEach(option => {
             addWeatherListener(option, dropdown);
         });
-        
+
         // Скрыть всплывающий список погоды и времени
-        
+
         html[0]?.addEventListener('click', (event) => {
             // Погода
             if (dropdown && !dropdown.contains(event.target) && !document.getElementById('vn-weather').contains(event.target)) {
@@ -1007,7 +1007,7 @@ export class VisualNovelDialogues extends FormApplication {
                         textParEl.querySelector(`.vn-title`).textContent = portraitData.title || ""
                     }
                     clearTimeout(timeoutId);
-                }, 750); 
+                }, 750);
             });
             activeElement.addEventListener('mouseout', function() {
                 const settingData = getSettings()
@@ -1079,8 +1079,8 @@ export class VisualNovelDialogues extends FormApplication {
                 options = {change: ["editPortrait", "editOrder"], positions: [position], side: [_side]}
             }
             await requestSettingsUpdate(settings, options)
-        // Окно редактирования VN - перемещение (смена) портрета
-        // (заметка: из-за того что пустые слоты скрывают img элементы всё немного работает через жопу, потом починю если будет желание, один хуй всё нормально работает)
+            // Окно редактирования VN - перемещение (смена) портрета
+            // (заметка: из-за того что пустые слоты скрывают img элементы всё немного работает через жопу, потом починю если будет желание, один хуй всё нормально работает)
         } else if (event.target?.classList?.contains("vn-ew-slot") || event.target?.parentElement?.classList?.contains("vn-ew-slot")) {
             settings.activeSpeakers[transferData[1]] = getPortrait(event.target.dataset.id, settings) || null
             settings.activeSpeakers[event.target.dataset.pos] = transferData[0]
@@ -1230,7 +1230,7 @@ Hooks.on("updateSetting", async (setting, value, options, userId) => {
                     textParEl.querySelector(`.vn-title`).textContent = portraitData?.title || ""
                 }
                 if (allowTo('editWindow', permSettings)) editWindowActorUpdate(pos)
-        }}
+            }}
         if (changeData.includes("editWindowPortChange")) {      // Изменение портрета в окне редактирования
             if (allowTo('editWindow', permSettings)) editWindowActorUpdate()
         }
@@ -1452,14 +1452,14 @@ function addWeatherListener(option, dropdown) {
                 </form>`,
                 buttons: {
                     common: { icon: '<i class=""></i>', label: game.i18n.localize(`${C.ID}.createWeather.confirm`), callback: async (html) => {
-                        const weather = {
-                            name: html.find('input[name="name"]')[0].value || game.i18n.localize(`${C.ID}.createWeather.noName`),
-                            icon: "fas fa-" + (html.find('input[name="icon"]')[0].value || "question"),
-                            id: randomID()
-                        }
-                        settingData.weatherList.push(weather)
-                        await requestSettingsUpdate(settingData, {change: ["weatherList"]})
-                    }}
+                            const weather = {
+                                name: html.find('input[name="name"]')[0].value || game.i18n.localize(`${C.ID}.createWeather.noName`),
+                                icon: "fas fa-" + (html.find('input[name="icon"]')[0].value || "question"),
+                                id: randomID()
+                            }
+                            settingData.weatherList.push(weather)
+                            await requestSettingsUpdate(settingData, {change: ["weatherList"]})
+                        }}
                 },
                 default: 'common',
                 close: () => {},
@@ -1581,7 +1581,7 @@ Hooks.on("closeCustomSlidersSet", () => {
 // ПКМ на пользователя в списке игроков в правом верхнем углу окна Visual Novel
 function contextMenuListener(element) {
     function closeDropdownOnClickOutside(event) {
-        const dropdown = document.querySelector('.vn-players-list-dropdown'); 
+        const dropdown = document.querySelector('.vn-players-list-dropdown');
         if (!dropdown?.contains(event.target)) {
             dropdown?.remove();
             document.removeEventListener('click', closeDropdownOnClickOutside);
