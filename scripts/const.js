@@ -67,16 +67,25 @@ export const getEmptyActiveSpeakers = (sides = ["left", "right", "center"], numb
 }
 
 export async function createBackup() {
-    let count;
-    const backupPath = `${game.data.dataDir}/visual-novel-backups`;
+    const backupPath = "visual-novel-backups"; // Relative path in user data directory
+    let count = { files: [] }; // Default empty file list
     try {
-        count = await foundry.applications.apps.FilePicker.implementation.browse("data", backupPath);
+        // Attempt to browse the backup directory
+        count = await FilePicker.browse("data", backupPath);
     } catch (error) {
-        console.log(`%c${game.i18n.localize(`${Constants.ID}.errors.createBackup`)}:`, "color:red");
-        await foundry.applications.apps.FilePicker.implementation.createDirectory("data", backupPath);
+        // If directory doesn't exist, create it
+        console.warn(`%c${game.i18n.localize(`${Constants.ID}.errors.createBackup`)}: Creating directory`, "color:orange");
+        await FilePicker.createDirectory("data", backupPath, { bucket: null });
     }
-    const newFile = new File([JSON.stringify(game.settings.get(Constants.ID, 'vnData'))], `settingDataBackup-${count?.files?.length || 0}.json`, { type: "application/json" });
-    await foundry.applications.apps.FilePicker.implementation.upload("data", backupPath, newFile, {}, { notify: false });
+    // Create and upload the backup file
+    const fileName = `settingDataBackup-${count.files.length}.json`;
+    const newFile = new File(
+        [JSON.stringify(game.settings.get(Constants.ID, 'vnData'))],
+        fileName,
+        { type: "application/json" }
+    );
+    await FilePicker.upload("data", backupPath, newFile, {}, { notify: true });
+    ui.notifications.info(game.i18n.localize(`${Constants.ID}.backupCreated`) + ` ${fileName}`);
 }
 
 export const getTextureSize = async (imgPath) => {
