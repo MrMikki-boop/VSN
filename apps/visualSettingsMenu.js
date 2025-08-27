@@ -94,7 +94,7 @@ export class VisualSettingsMenu extends FormApplication {
         const visualSettingsKeys = ["hintButton", "sideMainName", "requestsSound", "worldWidthEqualFrame", "fontFamily", "worldOffsetY", "backgroundPlaceholder"]
         // Tech settings menu
         const techSettingsMenus = ["permissions", "restoreFromBackup", "createBackup"]
-        const techSettingsKeys = ["headerPortraitButton", "makesBackup", "showToolbar", "permaForcedOpen", "useTokenForPortraits", "autoAssignSlots", "autoSceneData", "portraitFoldersPath", "backgroundFoldersPath", "zIndex"];
+        const techSettingsKeys = ["headerPortraitButton", "makesBackup", "showToolbar", "permaForcedOpen", "useTokenForPortraits", "autoAssignSlots", "autoSceneData", "portraitFoldersPath", "backgoundFoldersPath", "zIndex"];
         // Modules settings menu
         const modulesSettingsMenus = []
         const modulesSettingsKeys = ["monkCommonDisplay", "useSimpleCalendar"]
