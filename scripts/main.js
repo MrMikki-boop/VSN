@@ -167,66 +167,153 @@ async function autoAssignSlots(settingData) {
     }
 }
 
+import { VNLocation } from '../scripts/locationClass.js';
+
 async function updateSceneData(settingData) {
     if (!game.settings.get(C.ID, "autoSceneData") || !canvas.scene) return;
 
     const scene = canvas.scene;
-    const location = settingData.location || {};
+    let location = settingData.location || {};
 
-    // Фон из сцены
-    location.backgroundImage = scene.background?.src || game.settings.get(C.ID, "backgroundPlaceholder");
+    // Получаем фон из сцены
+    const sceneBackground = scene.background?.src || game.settings.get(C.ID, "backgroundPlaceholder");
 
-    // Название из сцены
-    location.locationName = "???";
+    // Ищем существующую локацию с таким же фоном
+    const existingLocation = settingData.locationList.find(loc => loc.backgroundImage === sceneBackground);
 
-    // Погода из заметок сцены (если есть) или по умолчанию
-    let weather = settingData.weatherList.find(w => w.name === "Неизвестная погода");
+    if (existingLocation) {
+        // Если локация уже есть в списке, используем её данные
+        location = foundry.utils.deepClone(existingLocation);
+        console.log(`Найдена существующая локация: ${location.locationName}`);
+    } else {
+        // Если локации нет, создаём новую с фоном из сцены
+        location.backgroundImage = sceneBackground;
+        location.locationName = "???";
+
+        // Создаём объект новой локации для locationList
+        const newLocationData = {
+            locationName: "???",
+            backgroundImage: sceneBackground,
+            parentLocation: "",
+            locationTags: [],
+            weather: null,
+            temperature: null,
+            knowTime: true
+        };
+
+        // Парсим данные из journal сцены для новой локации
+        if (scene.journal) {
+            const journalContent = scene.journal.pages.contents[0]?.text?.content || "";
+
+            // Родительская локация
+            const parentMatch = journalContent.match(/<p>\s*Родительская локация:\s*([^<]+)\s*<\/p>/i);
+            if (parentMatch) {
+                newLocationData.parentLocation = parentMatch[1].trim();
+            }
+
+            // Температура
+            const tempMatch = journalContent.match(/<p>\s*Температура:\s*([-]?\d+)\s*(?:°C|°F)?\s*<\/p>/i);
+            if (tempMatch) {
+                newLocationData.temperature = parseInt(tempMatch[1]);
+            }
+
+            // Время
+            const timeMatch = journalContent.match(/<p>\s*Время:\s*([^<]+)\s*<\/p>/i);
+            newLocationData.knowTime = !!timeMatch;
+            if (timeMatch) {
+                newLocationData.time = timeMatch[1].trim();
+            }
+        }
+
+        // Создаём новую локацию и добавляем в список
+        const vnLocation = new VNLocation(newLocationData);
+        settingData.locationList.push(vnLocation);
+
+        // Используем созданную локацию как текущую
+        location = foundry.utils.deepClone(vnLocation);
+
+        console.log(`Создана новая локация с фоном сцены: ${sceneBackground}`);
+    }
+
+    // Обновляем/дополняем данные локации из сцены (если есть journal)
     if (scene.journal) {
         const journalContent = scene.journal.pages.contents[0]?.text?.content || "";
+
+        // Погода из заметок сцены
         const weatherMatch = journalContent.match(/<p>\s*Погода:\s*([^<]+)\s*<\/p>/i);
         if (weatherMatch) {
             const weatherName = weatherMatch[1].trim();
-            weather = settingData.weatherList.find(w => w.name === weatherName) || { name: weatherName, icon: "fas fa-question", id: foundry.utils.randomID() };
-            if (!settingData.weatherList.some(w => w.name === weatherName)) {
+            let weather = settingData.weatherList.find(w => w.name === weatherName);
+
+            if (!weather) {
+                weather = {
+                    name: weatherName,
+                    icon: "fas fa-question",
+                    id: foundry.utils.randomID()
+                };
                 settingData.weatherList.push(weather);
             }
+            location.weather = weather;
+        } else if (!location.weather) {
+            // Если погода не указана и её нет в локации, ставим по умолчанию
+            location.weather = settingData.weatherList.find(w => w.name === "Неизвестная погода");
+        }
+
+        // Время из заметок (если не используется Simple Calendar)
+        if (!game.settings.get(C.ID, "useSimpleCalendar") || !game.modules.get("foundryvtt-simple-calendar")?.active) {
+            const timeMatch = journalContent.match(/<p>\s*Время:\s*([^<]+)\s*<\/p>/i);
+            location.knowTime = !!timeMatch;
+            location.time = timeMatch ? timeMatch[1].trim() : settingData.clockTime || "12:30";
+        }
+
+        // Температура из заметок
+        const tempMatch = journalContent.match(/<p>\s*Температура:\s*([-]?\d+)\s*(?:°C|°F)?\s*<\/p>/i);
+        if (tempMatch) {
+            location.temperature = parseInt(tempMatch[1]);
+        }
+
+        // Родительская локация из заметок
+        const parentMatch = journalContent.match(/<p>\s*Родительская локация:\s*([^<]+)\s*<\/p>/i);
+        if (parentMatch) {
+            location.parentLocation = parentMatch[1].trim();
+        }
+    } else {
+        // Если журнала нет, устанавливаем базовые значения
+        if (!location.weather) {
+            location.weather = settingData.weatherList.find(w => w.name === "Неизвестная погода");
+        }
+
+        if (game.settings.get(C.ID, "useSimpleCalendar") && game.modules.get("foundryvtt-simple-calendar")?.active) {
+            location.knowTime = true;
+        } else {
+            location.knowTime = false;
+            location.time = settingData.clockTime || "12:30";
         }
     }
-    location.weather = weather;
 
-    // Время из Simple Calendar или заметок сцены
-    if (game.settings.get(C.ID, "useSimpleCalendar") && game.modules.get("foundryvtt-simple-calendar")?.active) {
-        location.knowTime = true;
-    } else if (scene.journal) {
-        const journalContent = scene.journal.pages.contents[0]?.text?.content || "";
-        const timeMatch = journalContent.match(/<p>\s*Время:\s*([^<]+)\s*<\/p>/i);
-        location.knowTime = !!timeMatch;
-        location.time = timeMatch ? timeMatch[1].trim() : settingData.clockTime || "12:30";
-    } else {
-        location.knowTime = false;
-        location.time = settingData.clockTime || "12:30";
-    }
-
-    // Температура (если указана в заметках сцены, например, "Температура: 20°C")
-    if (scene.journal) {
-        const journalContent = scene.journal.pages.contents[0]?.text?.content || "";
-        const tempMatch = journalContent.match(/<p>\s*Температура:\s*([-]?\d+)\s*(?:°C|°F)?\s*<\/p>/i);
-        location.temperature = tempMatch ? parseInt(tempMatch[1]) : null;
-    } else {
-        location.temperature = null;
-    }
-
-    // Родительская локация (если есть в заметках, например, "Родительская локация: Город")
-    if (scene.journal) {
-        const journalContent = scene.journal.pages.contents[0]?.text?.content || "";
-        const parentMatch = journalContent.match(/<p>\s*Родительская локация:\s*([^<]+)\s*<\/p>/i);
-        location.parentLocation = parentMatch ? parentMatch[1].trim() : "";
-    } else {
-        location.parentLocation = "";
+    // Если была создана новая локация или обновлена существующая,
+    // обновляем её в locationList
+    if (existingLocation) {
+        const locationIndex = settingData.locationList.findIndex(loc => loc.id === existingLocation.id);
+        if (locationIndex !== -1) {
+            // Обновляем локацию в списке, сохраняя её ID и другие важные поля
+            settingData.locationList[locationIndex] = foundry.utils.mergeObject(
+                settingData.locationList[locationIndex],
+                {
+                    weather: location.weather,
+                    temperature: location.temperature,
+                    knowTime: location.knowTime,
+                    time: location.time,
+                    parentLocation: location.parentLocation
+                }
+            );
+        }
     }
 
     settingData.location = location;
-    await requestSettingsUpdate(settingData, { change: ["location", "weatherList"] });
+    await requestSettingsUpdate(settingData, {
+        change: ["location", "weatherList", "locationList"]
+    });
 }
 
 const getActorEl = (pos) => {
