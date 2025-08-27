@@ -177,7 +177,7 @@ async function updateSceneData(settingData) {
     location.backgroundImage = scene.background?.src || game.settings.get(C.ID, "backgroundPlaceholder");
 
     // Название из сцены
-    location.locationName = scene.name || "???";
+    location.locationName = "???";
 
     // Погода из заметок сцены (если есть) или по умолчанию
     let weather = settingData.weatherList.find(w => w.name === "Неизвестная погода");

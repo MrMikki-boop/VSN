@@ -170,31 +170,20 @@ export class VisualSettingsMenu extends FormApplication {
 
             // Сохранить настройки
             html[0].querySelector('.vsm-save-button')?.addEventListener('click', async (event) => {
-                const settingEls = html[0].querySelectorAll('.vsm-setting-container')
+                const settingEls = html[0].querySelectorAll('.vsm-setting-container');
                 for (const el of settingEls) {
-                    const settingType = el.dataset.type
-                    if (settingType == "button") continue
-                    const settingKey = el.dataset.key
+                    const settingType = el.dataset.type;
+                    if (settingType === "button") continue;
+                    const settingKey = el.dataset.key;
                     const settingValue =
-                        settingType == "boolean" ? el.querySelector('input').checked :
-                            settingType == "number" ? parseInt(el.querySelector('input').value) :
-                                (el.querySelector('input')?.value || el.querySelector('select')?.value)
+                        settingType === "boolean" ? el.querySelector('input').checked :
+                            settingType === "number" ? parseInt(el.querySelector('input').value) || 0 :
+                                (el.querySelector('input')?.value || el.querySelector('select')?.value || "");
 
-                    await game.settings.set(C.ID, settingKey, settingValue)
+                    await game.settings.set(C.ID, settingKey, settingValue);
                 }
-                // VisualNovelDialogues.instance.render(true)
-                if (settingKey === "autoAssignSlots" && settingValue) {
-                    console.log("autoAssignSlots включено: игроки в левые слоты, NPC в правые");
-                    const settingData = getSettings();
-                    await autoAssignSlots(settingData);
-                }
-                if (settingKey === "autoSceneData" && settingValue) {
-                    console.log("autoSceneData включено: данные локации берутся из активной сцены");
-                    const settingData = getSettings();
-                    await updateSceneData(settingData);
-                }
-                VisualNovelDialogues.renderForAll()
-                ui.notifications.info(game.i18n.localize(`${C.ID}.visualSettingsMenu.saved`))
+                VisualNovelDialogues.renderForAll();
+                ui.notifications.info(game.i18n.localize(`${C.ID}.visualSettingsMenu.saved`));
             })
         }
 
