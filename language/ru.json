@@ -200,7 +200,13 @@
       "reset": "Сбросить",
       "settings-menu": "Меню настроек Visual Novel",
       "ewClose": "Закрыть окно редактирования (выключить режим редактирования)",
-      "locationPicker": "Открыть окно выбора локации"
+      "locationPicker": {
+        "confirmDelete": {
+          "title": "Подтвердить удаление",
+          "content": "Вы действительно хотите удалить локацию \"{locationName}\"?"
+        },
+        "locationDeleted": "Локация успешно удалена"
+      }
     },
     "vn-edit": {
       "portraits": "Портреты",

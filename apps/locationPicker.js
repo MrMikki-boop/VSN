@@ -47,10 +47,17 @@ const locationElement = (location, hasEditFilter = false) => {
 }
 
 const locationListener = async (event) => {
-    if (event.target.classList.contains('fa-trash')) return
+    // Проверяем, не нажата ли кнопка удаления или её иконка
+    if (event.target.classList.contains('fa-trash') ||
+        event.target.classList.contains('lp-delete-button') ||
+        event.target.closest('.lp-delete-button')) {
+        return; // Не обрабатываем клик, если это кнопка удаления
+    }
+
     let editableFilter = LocationPicker.editableFilter
     const settings = getSettings()
     const location = settings.locationList.find(m => m.id == event.currentTarget.dataset.id)
+
     // Редактируемый фильтр выбран - добавление/удаление фильтра из списка тегов локации
     if (editableFilter) {
         if (location.locationTags.includes(editableFilter)) {
@@ -61,12 +68,12 @@ const locationListener = async (event) => {
             event.currentTarget.classList.add('lp-hlight-blue')
         }
         await VNLocation.updateFilterList(location.id, location.locationTags)
-    // Редактируемый фильтр не выбран - выбор локации и установка её в качестве активной
+        // Редактируемый фильтр не выбран - выбор локации и установка её в качестве активной
     } else {
         // Если linkChanges == true - заменяем локацию на выбранную целиком
         if (settings.linkChanges) {
             settings.location = location
-        // В ином случае, изменяем только фон
+            // В ином случае, изменяем только фон
         } else {
             settings.location.backgroundImage = location.backgroundImage
         }
@@ -76,18 +83,38 @@ const locationListener = async (event) => {
 }
 
 const deleteButtonListener = async (event) => {
+    // Останавливаем всплытие события, чтобы не сработал обработчик родительского элемента
+    event.stopPropagation();
+    event.preventDefault();
+
     const settings = getSettings()
     const type = event.currentTarget.getAttribute('type')
+
     // Удалить фильтр
     if (type == "deleteFilter") {
         settings.locationFilters = settings.locationFilters.filter(m => m.name != event.currentTarget.dataset.name)
         await requestSettingsUpdate(settings)
         LocationPicker.refresh()
-    // Удалить локацию
+        // Удалить локацию
     } else if (type == "deleteLocation") {
-        settings.locationList = settings.locationList.filter(m => m.id != event.currentTarget.dataset.id)
-        await requestSettingsUpdate(settings)
-        await LocationPicker.refresh()
+        // Добавляем подтверждение удаления для безопасности
+        const locationToDelete = settings.locationList.find(m => m.id == event.currentTarget.dataset.id)
+        const locationName = locationToDelete?.locationName || "неизвестной локации"
+
+        const confirmed = await Dialog.confirm({
+            title: game.i18n.localize(`${C.ID}.buttons.locationPicker.confirmDelete.title`),
+            content: `<p>${game.i18n.localize(`${C.ID}.buttons.locationPicker.confirmDelete.content`).replace("{locationName}", locationName)}</p>`,
+            yes: () => true,
+            no: () => false,
+            defaultYes: false
+        });
+
+        if (confirmed) {
+            settings.locationList = settings.locationList.filter(m => m.id != event.currentTarget.dataset.id)
+            await requestSettingsUpdate(settings)
+            await LocationPicker.refresh()
+            ui.notifications.info(game.i18n.localize(`${C.ID}.buttons.locationPicker.locationDeleted`));
+        }
     }
 }
 
