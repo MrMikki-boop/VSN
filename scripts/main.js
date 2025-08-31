@@ -1199,34 +1199,121 @@ export class VisualNovelDialogues extends FormApplication {
         function swapPortraitListener(elements, side) {
             elements.forEach(element => {
                 element?.addEventListener('click', async (event) => {
-                    if (!allowTo('portraitInteraction', permSettings)) return
-                    const settings = getSettings()
-                    const pos = event.target.parentElement.dataset.pos
-                    if (!pos) return
-                    if (game.user.isGM || event.target?.parentElement?.dataset?.id == game.user.character?.id) {
-                        if (pos.includes("First")) return
-                        const portraitData = settings.activeSpeakers[pos]
-                        if (!portraitData) return
-                        const _toSwapData = settings.activeSpeakers[`${side}First`] // буфер
-                        settings.activeSpeakers[`${side}First`] = portraitData
-                        settings.activeSpeakers[pos] = _toSwapData
+                    console.log('=== SWAP PORTRAIT DEBUG START ===');
+                    console.log('Side:', side);
 
-                        const options = {change: ["editPortrait"], positions: [`${side}First`, pos]}
-                        await requestSettingsUpdate(settings, options)
-                    } else {
-                        const myPos = Object.keys(settings.activeSpeakers).find(_pos => {
-                            if (settings.activeSpeakers[_pos]?.id === game.user.character?.id) return _pos;
-                        });
-                        if (!myPos) return
-                        const _toSwapData = settings.activeSpeakers[pos]
-                        settings.activeSpeakers[pos] = settings.activeSpeakers[myPos]
-                        settings.activeSpeakers[myPos] = _toSwapData
-
-                        const options = {change: ["editPortrait"], positions: [pos, myPos]}
-                        await requestSettingsUpdate(settings, options)
+                    if (!allowTo('portraitInteraction', permSettings)) {
+                        console.log('No permission for portrait interaction');
+                        return;
                     }
-                })
-            })
+
+                    const settings = getSettings();
+                    const pos = event.target.parentElement.dataset.pos;
+                    console.log('Clicked position:', pos);
+
+                    if (!pos) {
+                        console.log('No position found');
+                        return;
+                    }
+
+                    // Получаем реальные данные портрета из настроек, а не из DOM
+                    const clickedPortraitData = settings.activeSpeakers[pos];
+                    const clickedPortraitId = clickedPortraitData?.id;
+
+                    console.log('Current user is GM:', game.user.isGM);
+                    console.log('User character ID:', game.user.character?.id);
+                    console.log('Real clicked portrait ID:', clickedPortraitId);
+                    console.log('DOM clicked portrait ID:', event.target?.parentElement?.dataset?.id);
+
+                    // Логируем текущее состояние активных спикеров (только заполненные)
+                    console.log('Current active speakers before change:');
+                    Object.keys(settings.activeSpeakers).forEach(key => {
+                        const speaker = settings.activeSpeakers[key];
+                        if (speaker) {
+                            console.log(`  ${key}: ${speaker.name} (ID: ${speaker.id})`);
+                        }
+                    });
+
+                    const playerCharId = game.user.character?.id;
+                    const isOwnPortrait = clickedPortraitId === playerCharId;
+
+                    if (game.user.isGM || isOwnPortrait) {
+                        console.log('GM or own portrait clicked - moving to First position');
+                        if (pos.includes("First")) {
+                            console.log('Already in First position, returning');
+                            return;
+                        }
+
+                        if (!clickedPortraitData) {
+                            console.log('No portrait data found');
+                            return;
+                        }
+
+                        const firstPositionData = settings.activeSpeakers[`${side}First`];
+                        settings.activeSpeakers[`${side}First`] = clickedPortraitData;
+                        settings.activeSpeakers[pos] = firstPositionData;
+
+                        console.log('After GM/own portrait swap:');
+                        console.log(`  ${side}First:`, settings.activeSpeakers[`${side}First`]);
+                        console.log(`  ${pos}:`, settings.activeSpeakers[pos]);
+
+                        const options = {change: ["editPortrait"], positions: [`${side}First`, pos]};
+                        await requestSettingsUpdate(settings, options);
+                    } else {
+                        console.log('Regular player clicked on another portrait - swapping');
+
+                        if (!playerCharId) {
+                            console.log('No player character ID found');
+                            return;
+                        }
+
+                        // Находим ВСЕ позиции игрока, исключая кликнутую позицию
+                        const playerPositions = Object.keys(settings.activeSpeakers).filter(_pos => {
+                            const speaker = settings.activeSpeakers[_pos];
+                            return _pos !== pos && speaker?.id === playerCharId;
+                        });
+
+                        console.log('Player positions found:', playerPositions);
+
+                        if (playerPositions.length === 0) {
+                            console.log('My portrait not found in active speakers');
+                            return;
+                        }
+
+                        // Берем первую найденную позицию игрока (исключая кликнутую)
+                        const myPos = playerPositions[0];
+                        console.log('My position:', myPos);
+
+                        // Получаем данные портретов
+                        const myPortraitData = settings.activeSpeakers[myPos];
+
+                        console.log('Clicked portrait data:', clickedPortraitData);
+                        console.log('My portrait data:', myPortraitData);
+
+                        if (!myPortraitData) {
+                            console.log('My portrait data is null/undefined');
+                            return;
+                        }
+
+                        // Создаем глубокие копии для безопасности
+                        const clickedCopy = clickedPortraitData ? foundry.utils.deepClone(clickedPortraitData) : null;
+                        const myCopy = foundry.utils.deepClone(myPortraitData);
+
+                        // Меняем местами
+                        settings.activeSpeakers[pos] = myCopy;
+                        settings.activeSpeakers[myPos] = clickedCopy;
+
+                        console.log('After player swap:');
+                        console.log(`  ${pos}:`, settings.activeSpeakers[pos]);
+                        console.log(`  ${myPos}:`, settings.activeSpeakers[myPos]);
+
+                        const options = {change: ["editPortrait"], positions: [pos, myPos]};
+                        await requestSettingsUpdate(settings, options);
+                    }
+
+                    console.log('=== SWAP PORTRAIT DEBUG END ===');
+                });
+            });
         }
         const backPotraitLeftEls = html[0].querySelectorAll('.vn-pField-left')
         const backPotraitRightEls = html[0].querySelectorAll('.vn-pField-right')
@@ -1758,18 +1845,35 @@ Hooks.on('setup', () => {
             switch (type) {
                 case 'VNDataSetSettings':
                     await game.settings.set(C.ID, 'vnData', settingData, options);
-                    ;
+                    break;
                 default:
-                    ;
+                    break;
             }
         }
-        // Восстановить сохраненные левые слоты
-        if (game.user.isGM) {
-            const persistentLeft = game.settings.get(C.ID, "persistentLeftSlots") || {};
-            settingData.activeSpeakers = { ...settingData.activeSpeakers, ...persistentLeft };
-            await game.settings.set(C.ID, "vnData", settingData);
-        }
+        // УБИРАЕМ КОД ВОССТАНОВЛЕНИЯ ОТСЮДА!
+        // Он должен выполняться только при загрузке мира, а не при каждом сокет-сообщении
     });
+});
+
+// Если нужно восстановление левых слотов, добавьте отдельный хук для загрузки мира:
+Hooks.on('ready', async () => {
+    if (game.user.isGM) {
+        const currentData = getSettings();
+        const persistentLeft = game.settings.get(C.ID, "persistentLeftSlots") || {};
+
+        // Восстанавливаем только пустые слоты, не перезаписываем существующие
+        let needsUpdate = false;
+        Object.keys(persistentLeft).forEach(slot => {
+            if (!currentData.activeSpeakers[slot] && persistentLeft[slot]) {
+                currentData.activeSpeakers[slot] = persistentLeft[slot];
+                needsUpdate = true;
+            }
+        });
+
+        if (needsUpdate) {
+            await game.settings.set(C.ID, "vnData", currentData);
+        }
+    }
 });
 
 // Сохранять левые слоты при обновлении настроек
