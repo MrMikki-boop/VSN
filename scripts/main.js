@@ -1,4 +1,4 @@
-import { Constants as C, getSettings, getLocation, updatePortrait, getPortrait, selectorArray, getEmptyActiveSpeakers, getTextureSize, requestSettingsUpdate, allowTo, setFontsSize, getTime, uiButtonsIcons, useSimpleCalendar } from "./const.js";
+import { Constants as C, getActorPortraitData, getActorPortraitImage, getSettings, getLocation, isDefaultImage, normalizePortraitName, updatePortrait, getPortrait, selectorArray, getEmptyActiveSpeakers, getTextureSize, requestSettingsUpdate, allowTo, setFontsSize, getTime, uiButtonsIcons, useSimpleCalendar } from "./const.js";
 import { ActorPicker } from "../apps/actorPicker.js";
 import { LocationPicker, LocationPickerSettings } from "../apps/locationPicker.js";
 import { SlidersSetClass } from "./slidersSetClass.js";
@@ -41,7 +41,7 @@ function editWindowActorUpdate(pos = "") {
     // Изображение
     const ewPortraitEl = editWindow.querySelector(`.vn-ew-portraits img[data-pos="${pos}"]`)
     ewPortraitEl.src = activeSpeaker.img || ""
-    ewPortraitEl.style.transform = `scaleX(${(_isLeft !== !!activeSpeaker.mirrorX ? -1 : 1)})`
+    ewPortraitEl.style.transform = `scaleX(${activeSpeaker.mirrorX ? -1 : 1})`
     if (activeSpeaker.img) {
         ewPortraitEl.style.display = null
     } else {
@@ -108,6 +108,21 @@ async function autoAssignSlots(settingData) {
     });
 
     // Очищаем левые и правые слоты, если есть активная сцена
+    const getStoredPortrait = (actor) => {
+        const existing = getPortrait(actor.id, settingData);
+        const portrait = getActorPortraitData(actor, {
+            existing,
+            img: !isDefaultImage(existing?.img) ? existing.img : getActorPortraitImage(actor)
+        });
+        const portraitIndex = settingData.portraits.findIndex(p => p.id === portrait.id);
+        if (portraitIndex >= 0 && !foundry.utils.objectsEqual(settingData.portraits[portraitIndex], portrait)) {
+            settingData.portraits[portraitIndex] = portrait;
+        } else if (portraitIndex < 0 && portrait.img) {
+            settingData.portraits.push(portrait);
+        }
+        return portrait;
+    };
+
     if (canvas.scene) {
         leftSlots.forEach(slot => {
             if (!persistentLeft[slot]) delete activeSpeakers[slot];
@@ -128,30 +143,10 @@ async function autoAssignSlots(settingData) {
             });
             const slot = isPlayer ? leftSlots[leftIndex] : rightSlots[rightIndex];
             if (isPlayer && leftIndex < leftSlots.length && !persistentLeft[slot]) {
-                activeSpeakers[slot] = {
-                    id: actor.id,
-                    img: game.settings.get(C.ID, "useTokenForPortraits") ? actor.prototypeToken?.texture?.src || actor.img : actor.img,
-                    name: actor.name,
-                    title: "",
-                    offsetX: 0,
-                    offsetY: 0,
-                    scale: 100,
-                    mirrorX: false,
-                    widthEqualFrame: game.settings.get(C.ID, "worldWidthEqualFrame")
-                };
+                activeSpeakers[slot] = getStoredPortrait(actor);
                 leftIndex++;
             } else if (!isPlayer && rightIndex < rightSlots.length) {
-                activeSpeakers[slot] = {
-                    id: actor.id,
-                    img: game.settings.get(C.ID, "useTokenForPortraits") ? actor.prototypeToken?.texture?.src || actor.img : actor.img,
-                    name: actor.name,
-                    title: "",
-                    offsetX: 0,
-                    offsetY: 0,
-                    scale: 100,
-                    mirrorX: false,
-                    widthEqualFrame: game.settings.get(C.ID, "worldWidthEqualFrame")
-                };
+                activeSpeakers[slot] = getStoredPortrait(actor);
                 rightIndex++;
             }
         }
@@ -400,6 +395,7 @@ export class VisualNovelDialogues extends FormApplication {
             if (index <= uiData.slotCount[posParts[0]]) {
                 _tempPortrait = settingData.activeSpeakers[current]
                 if (_tempPortrait) {
+                    _tempPortrait.name = normalizePortraitName(_tempPortrait.name)
                     _tempPortrait.offsetY -= worldOffsetY
                     if (worldWidthEqualFrame) _tempPortrait.widthEqualFrame = true
                 }
@@ -424,7 +420,7 @@ export class VisualNovelDialogues extends FormApplication {
         }, {"left": [], "right": [], "center": []})
 
         const userPerm = game.user.role
-        const permSettings = deepClone(game.settings.get(C.ID, "playersPermissions"))
+        const permSettings = foundry.utils.deepClone(game.settings.get(C.ID, "playersPermissions"))
         let shownElements = Object.keys(permSettings).reduce((acc, el) => {
             acc[el] = permSettings[el].includes(userPerm)
             return acc
@@ -454,7 +450,7 @@ export class VisualNovelDialogues extends FormApplication {
             }).sort((a, b) => b.level - a.level),
             selectors: _selectorArray,
             selectorOpen: !!game.user.getFlag(C.ID, "selectorOpen"),
-            players: deepClone(game.users.filter(u => u.active)).map(u => {
+            players: foundry.utils.deepClone(game.users.filter(u => u.active)).map(u => {
                 return {
                     id: u.id,
                     name: u.name,
@@ -594,9 +590,13 @@ export class VisualNovelDialogues extends FormApplication {
     }
 
     // Активация слушателей
+    static refresh() {
+        VisualNovelDialogues.instance?.render(true);
+    }
+
     activateListeners(html) {
         super.activateListeners(html);
-        const permSettings = deepClone(game.settings.get(C.ID, "playersPermissions"))
+        const permSettings = foundry.utils.deepClone(game.settings.get(C.ID, "playersPermissions"))
         /* ——— Вспомогательные (больше квадратные) кнопки, начало —— */
         // - Показать/скрыть интерфейс
         document.getElementById('vn-hide-button')?.addEventListener('click', async (event) => {
@@ -801,6 +801,48 @@ export class VisualNovelDialogues extends FormApplication {
             await requestSettingsUpdate(settingData, {change: ["editMode"]})
         })
         // -- Выбор активного портрета при клике ЛКМ
+        const editWindowEl = document.getElementById('vn-edit-window');
+        const savedEditWindowPosition = game.user.getFlag(C.ID, "editWindowPosition");
+        if (editWindowEl && savedEditWindowPosition) {
+            editWindowEl.style.left = `${savedEditWindowPosition.left}px`;
+            editWindowEl.style.top = `${savedEditWindowPosition.top}px`;
+            editWindowEl.style.bottom = "auto";
+            editWindowEl.style.justifySelf = "auto";
+        }
+        editWindowEl?.querySelector('.vn-ew-header')?.addEventListener('mousedown', (event) => {
+            if (!allowTo("editWindow", permSettings) || event.button !== 0 || event.target.closest('.vn-small-button')) return;
+            const rect = editWindowEl.getBoundingClientRect();
+            const offsetX = event.clientX - rect.left;
+            const offsetY = event.clientY - rect.top;
+            editWindowEl.style.bottom = "auto";
+            editWindowEl.style.justifySelf = "auto";
+            editWindowEl.style.left = `${rect.left}px`;
+            editWindowEl.style.top = `${rect.top}px`;
+            editWindowEl.classList.add("vn-dragging");
+
+            const onMouseMove = (moveEvent) => {
+                const maxLeft = Math.max(0, window.innerWidth - editWindowEl.offsetWidth);
+                const maxTop = Math.max(0, window.innerHeight - editWindowEl.offsetHeight);
+                const left = Math.min(Math.max(moveEvent.clientX - offsetX, 0), maxLeft);
+                const top = Math.min(Math.max(moveEvent.clientY - offsetY, 0), maxTop);
+                editWindowEl.style.left = `${left}px`;
+                editWindowEl.style.top = `${top}px`;
+            };
+
+            const onMouseUp = async () => {
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+                editWindowEl.classList.remove("vn-dragging");
+                await game.user.setFlag(C.ID, "editWindowPosition", {
+                    left: parseInt(editWindowEl.style.left) || 0,
+                    top: parseInt(editWindowEl.style.top) || 0
+                });
+            };
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        })
+
         html.find('.vn-ew-slot').on('click', async (event) => {
             if (!allowTo("editWindow", permSettings)) return
             const settingData = getSettings()
@@ -880,7 +922,7 @@ export class VisualNovelDialogues extends FormApplication {
             const settingData = getSettings();
             const actorBodyEl = document.querySelector(`.vn-portrait.${settingData.editActiveSpeaker}`)
             if (!actorBodyEl) return
-            actorBodyEl.style.transform = actorBodyEl.style.transform.replace(/-?1/, match => match === "1" ? "-1" : "1")
+            actorBodyEl.style.transform = `scaleX(${event.currentTarget.checked ? -1 : 1})`
         })
         // -- Ширина портрета = ширине рамки
         html.find('input[name="widthEqualFrame"]').on('change', function(event) {
@@ -1101,7 +1143,7 @@ export class VisualNovelDialogues extends FormApplication {
             if (!_id) return
             const settings = getSettings()
             settings.order[_side] = settings.order[_side].filter(el => el.id !== _id)
-            await requestSettingsUpdate(settings, {change: ["editOrder"], side: [_side]})
+            await requestSettingsUpdate(settings, {change: ["editOrder"], side: _side})
         })
         /* ——— Header, конец ——— */
 
@@ -1109,66 +1151,78 @@ export class VisualNovelDialogues extends FormApplication {
         async function request(level) {
             if (!allowTo('requests', permSettings)) return;
 
-            let img, id, name;
+            let requestPortrait;
             const character = game.user.character;
-            const defaultImage = "modules/visual-novel-dialogues/assets/default-request.png"; // Define a default image in your module
+            let settingData = getSettings();
 
             if (character) {
-                // Use character token image if available
-                img = character.prototypeToken?.texture?.src;
-                id = character.id;
-                name = character.name || game.user.name;
-                if (!img || img === "icons/svg/mystery-man.webp") {
-                    img = game.user.avatar; // Fallback to user avatar if token image is missing or default
-                }
-            } else {
-                // Fallback to user data if no character is selected
-                img = game.user.avatar;
-                id = game.user.id;
-                name = game.user.name;
-            }
-
-            // Final fallback to default image if no valid image is found
-            if (!img || img === "icons/svg/mystery-man.webp") {
-                if (game.user.isGM) {
-                    img = defaultImage; // GMs use default image to avoid blocking
-                } else {
-                    ui.notifications.error(game.i18n.localize(`${C.ID}.errors.noImageAvailable`));
+                const existingPortrait = getPortrait(character.id, settingData);
+                const img = !isDefaultImage(existingPortrait?.img)
+                    ? existingPortrait.img
+                    : getActorPortraitImage(character, {fallbackUser: game.user});
+                if (!img) {
+                    ui.notifications.error(game.i18n.localize(`${C.ID}.errors.noImageAvailable`) || game.i18n.localize(`${C.ID}.errors.noCharacter`));
                     return;
                 }
+                requestPortrait = getActorPortraitData(character, {existing: existingPortrait, img, fallbackUser: game.user});
+                const portraitIndex = settingData.portraits.findIndex(p => p.id === requestPortrait.id);
+                if (portraitIndex >= 0) settingData.portraits[portraitIndex] = requestPortrait;
+                else settingData.portraits.push(requestPortrait);
+            } else {
+                const img = isDefaultImage(game.user.avatar) ? "" : game.user.avatar;
+                if (!img) {
+                    ui.notifications.error(game.i18n.localize(`${C.ID}.errors.noCharacter`));
+                    return;
+                }
+                requestPortrait = {
+                    id: game.user.id,
+                    img,
+                    name: normalizePortraitName(game.user.name),
+                    title: ""
+                };
             }
 
-            // Debug logging to diagnose image issues
-            console.log("Request Debug:", { character: !!character, img, id, name, userAvatar: game.user.avatar, tokenSrc: character?.prototypeToken?.texture?.src });
-
-            let settingData = getSettings();
-            settingData.effects.requests[id] = {
+            settingData.effects.requests[requestPortrait.id] = {
                 level: level,
-                img: img,
-                name: name
+                img: requestPortrait.img,
+                name: requestPortrait.name
             };
-            const options = { change: ["requestAdd"], requestId: id };
+            const options = { change: ["requestAdd"], requestId: requestPortrait.id };
             // Автоматическое назначение в слоты для заявок
-            if (game.settings.get(C.ID, "autoAssignSlots")) {
+            if (character && game.settings.get(C.ID, "autoAssignSlots")) {
                 const isPlayer = character && Object.keys(character.ownership).some(userId => {
                     const user = game.users.get(userId);
                     return user && !user.isGM && character.ownership[userId] >= 3;
                 });
-                const slot = isPlayer ? "leftFirst" : "rightFirst";
-                if (!settingData.activeSpeakers[slot] || !settingData.activeSpeakers[slot].id) {
-                    settingData.activeSpeakers[slot] = {
-                        id: id,
-                        img: img,
-                        name: name,
-                        title: "",
-                        offsetX: 0,
-                        offsetY: 0,
-                        scale: 100,
-                        mirrorX: false,
-                        widthEqualFrame: game.settings.get(C.ID, "worldWidthEqualFrame")
-                    };
-                    options.change.push("editActiveSpeakers");
+                const side = isPlayer ? "left" : "right";
+                const slotOrder = ["First", "Second", "Third", "Fourth", "Fifth", "Sixth", "Seventh", "Eighth", "Ninth", "Tenth"];
+                const slots = slotOrder.map(slot => `${side}${slot}`).filter(slot => slot in settingData.activeSpeakers);
+                const existingSlot = slots.find(slot => settingData.activeSpeakers[slot]?.id === requestPortrait.id);
+                const emptySlot = slots.find(slot => !settingData.activeSpeakers[slot]?.id);
+                const slot = existingSlot || emptySlot || `${side}First`;
+                const previousSpeaker = settingData.activeSpeakers[slot];
+
+                if (!existingSlot && previousSpeaker?.id && previousSpeaker.id !== requestPortrait.id) {
+                    settingData.order[side] ??= [];
+                    if (!settingData.order[side].some(item => item.id === previousSpeaker.id)) {
+                        settingData.order[side].push({
+                            id: previousSpeaker.id,
+                            img: previousSpeaker.img,
+                            name: `${previousSpeaker.name}${previousSpeaker.title ? `, ${previousSpeaker.title}` : ""}`,
+                        });
+                        if (settingData.order[side].length > 6) settingData.order[side].shift();
+                        options.change.push("editOrder");
+                        options.side = side;
+                    }
                 }
+
+                settingData.activeSpeakers[slot] = requestPortrait;
+                if (!settingData.activeSlots[side].includes(slot)) settingData.activeSlots[side].push(slot);
+                settingData.slidersText[side][0] = requestPortrait.name;
+                settingData.slidersText[side][1] = requestPortrait.title;
+                options.change.push("editPortrait", "editActiveSlots");
+                options.positions = [slot];
+                options.slotSide = side;
             }
             await requestSettingsUpdate(settingData, options);
         }
@@ -1199,26 +1253,44 @@ export class VisualNovelDialogues extends FormApplication {
         function swapPortraitListener(elements, side) {
             elements.forEach(element => {
                 element?.addEventListener('click', async (event) => {
-                    console.log('=== SWAP PORTRAIT DEBUG START ===');
-                    console.log('Side:', side);
-
-                    if (!allowTo('portraitInteraction', permSettings)) {
-                        console.log('No permission for portrait interaction');
-                        return;
-                    }
+                    if (!allowTo('portraitInteraction', permSettings)) return;
 
                     const settings = getSettings();
-                    const pos = event.target.parentElement.dataset.pos;
-                    console.log('Clicked position:', pos);
+                    const pos = event.currentTarget.parentElement?.dataset.pos;
 
-                    if (!pos) {
-                        console.log('No position found');
-                        return;
-                    }
+                    if (!pos) return;
 
                     // Получаем реальные данные портрета из настроек, а не из DOM
                     const clickedPortraitData = settings.activeSpeakers[pos];
                     const clickedPortraitId = clickedPortraitData?.id;
+                    if (!clickedPortraitData || !clickedPortraitId) return;
+
+                    if (game.user.isGM) {
+                        if (side !== "right") return;
+                    } else {
+                        const playerCharId = game.user.character?.id;
+                        if (side !== "left" || clickedPortraitId !== playerCharId) return;
+                    }
+
+                    const firstPos = `${side}First`;
+                    const positions = [firstPos];
+                    if (pos !== firstPos) {
+                        const firstPositionData = settings.activeSpeakers[firstPos];
+                        settings.activeSpeakers[firstPos] = clickedPortraitData;
+                        settings.activeSpeakers[pos] = firstPositionData;
+                        positions.push(pos);
+                    }
+
+                    settings.activeSlots[side] = [firstPos];
+                    settings.slidersText[side][0] = clickedPortraitData.name || "";
+                    settings.slidersText[side][1] = clickedPortraitData.title || "";
+
+                    await requestSettingsUpdate(settings, {
+                        change: ["editPortrait", "editActiveSlots"],
+                        positions,
+                        slotSide: side
+                    });
+                    return;
 
                     console.log('Current user is GM:', game.user.isGM);
                     console.log('User character ID:', game.user.character?.id);
@@ -1326,7 +1398,7 @@ export class VisualNovelDialogues extends FormApplication {
                     if (!allowTo("miniOrder", permSettings)) return
                     const pos = event.target.parentElement.dataset.pos
                     const settings = getSettings()
-                    const portraitData = deepClone(settings.activeSpeakers[pos])
+                    const portraitData = foundry.utils.deepClone(settings.activeSpeakers[pos])
                     settings.activeSpeakers[pos] = null
                     let options = {change: ["editPortrait"], positions: [pos]}
                     const _id = event.target.parentElement.dataset.id
@@ -1337,7 +1409,7 @@ export class VisualNovelDialogues extends FormApplication {
                             name: `${portraitData.name}${portraitData.title ? `, ${portraitData.title}` : ""}`,
                         })
                         if (settings.order[side].length > 6) settings.order[side].shift()
-                        options = {change: ["editPortrait", "editOrder"], positions: [pos], side: [side]}
+                        options = {change: ["editPortrait", "editOrder"], positions: [pos], side}
                     }
                     await requestSettingsUpdate(settings, options)
                 })
@@ -1427,7 +1499,7 @@ export class VisualNovelDialogues extends FormApplication {
                 } else {
                     settings.order[_side] = settings.order[_side].filter(el => el.id !== _id)
                 }
-                options = {change: ["editPortrait", "editOrder"], positions: [position], side: [_side]}
+                options = {change: ["editPortrait", "editOrder"], positions: [position], side: _side}
             }
             await requestSettingsUpdate(settings, options)
             // Окно редактирования VN - перемещение (смена) портрета
@@ -1459,7 +1531,7 @@ Hooks.on("updateSetting", async (setting, value, options, userId) => {
         const settingData = setting.value
         if (!changeData) return
 
-        const permSettings = deepClone(game.settings.get(C.ID, "playersPermissions"))
+        const permSettings = foundry.utils.deepClone(game.settings.get(C.ID, "playersPermissions"))
 
         const backgroundEl = document.getElementById('vn-background-image')
         const locNameEl = document.querySelector('.vn-current-location-body span');
@@ -1542,7 +1614,7 @@ Hooks.on("updateSetting", async (setting, value, options, userId) => {
             })
             editWindowActorUpdate()
         }
-        if (changeData.includes("editPortrait")) {              // Редактирование портрета
+        if (changeData.includes("editPortrait")) {
             const positions = options.positions.filter(p=>!!p)
             for (let i = 0; i < positions.length; i++) {
                 const pos = positions[i]
@@ -1550,7 +1622,7 @@ Hooks.on("updateSetting", async (setting, value, options, userId) => {
                 const portraitBodyEl = document.querySelector(`.vn-portrait.${pos}`)
                 if (!portraitBodyEl) continue
                 portraitBodyEl.classList.remove('vn-anim')
-                await new Promise((resolve) => setTimeout(resolve, 50)); // Небольшая задержка чтобы анимация воспроизвелась
+                await new Promise((resolve) => setTimeout(resolve, 50));
                 const portraitEl = getActorEl(pos)
                 portraitEl.src = portraitData?.img || ""
                 portraitEl.parentElement.parentElement.dataset.tooltip = ((portraitData?.name || "") + (portraitData?.title ? `, ${portraitData?.title}` : "")) || ""
@@ -1561,11 +1633,10 @@ Hooks.on("updateSetting", async (setting, value, options, userId) => {
                     portraitEl.style.top = `${(portraitData.offsetY || 0) - game.settings.get(C.ID, "worldOffsetY")}px`;
                     portraitEl.style.left = `${portraitData[isLeft ? "offsetXl" : "offsetXr"] || 0}px`;
                     portraitEl.style.transform = `scale(${portraitData.scale || 100}%)`;
-
                     // Анимация при появлении
                     portraitBodyEl.classList.add('vn-anim')
                     // Отражение по оси X
-                    portraitBodyEl.style.transform = `scaleX(${(isLeft !== !!portraitData.mirrorX ? -1 : 1)})`
+                    portraitBodyEl.style.transform = `scaleX(${portraitData.mirrorX ? -1 : 1})`
                     // Размер портрета равен размеру рамки
                     if (portraitData.widthEqualFrame) {
                         portraitBodyEl.style.width = "100%"
@@ -1579,9 +1650,22 @@ Hooks.on("updateSetting", async (setting, value, options, userId) => {
                     const textParEl = document.getElementById(`vn-${isLeft ? "left" : "right"}-text`)
                     textParEl.querySelector(`.vn-name`).textContent = portraitData?.name || ""
                     textParEl.querySelector(`.vn-title`).textContent = portraitData?.title || ""
+
+                    // ДОБАВЛЯЕМ ОБНОВЛЕНИЕ РАЗМЕРА ТЕКСТА
+                    if (window.VNTextUtils) {
+                        window.VNTextUtils.updateElementText(pos, portraitData);
+                    }
                 }
                 if (allowTo('editWindow', permSettings)) editWindowActorUpdate(pos)
-            }}
+            }
+
+            // ДОБАВЛЯЕМ ОБЩЕЕ ОБНОВЛЕНИЕ РАЗМЕРА ТЕКСТА В КОНЦЕ
+            setTimeout(() => {
+                if (window.VNTextUtils) {
+                    window.VNTextUtils.adjustTextSize();
+                }
+            }, 150);
+        }
         if (changeData.includes("editWindowPortChange")) {      // Изменение портрета в окне редактирования
             if (allowTo('editWindow', permSettings)) editWindowActorUpdate()
         }
@@ -1650,6 +1734,22 @@ Hooks.on("updateSetting", async (setting, value, options, userId) => {
                     el.parentElement.style["z-index"] = 84-index
                 }
             })
+            if (!game.settings.get(C.ID, "sideMainName")) {
+                const leftTextParEl = document.getElementById(`vn-left-text`)
+                leftTextParEl.querySelector(`.vn-name`).textContent = settingData.slidersText.left[0] || ""
+                leftTextParEl.querySelector(`.vn-title`).textContent = settingData.slidersText.left[1] || ""
+                const rightTextParEl = document.getElementById(`vn-right-text`)
+                rightTextParEl.querySelector(`.vn-name`).textContent = settingData.slidersText.right[0] || ""
+                rightTextParEl.querySelector(`.vn-title`).textContent = settingData.slidersText.right[1] || ""
+
+                // ДОБАВЛЯЕМ ОБНОВЛЕНИЕ РАЗМЕРА ТЕКСТА
+                setTimeout(() => {
+                    if (window.VNTextUtils) {
+                        window.VNTextUtils.adjustTextSize();
+                    }
+                }, 100);
+            }
+
             if (allowTo('editWindow', permSettings) && settingData.editMode) {
                 editWindowPortEls.forEach(el => {
                     if (isActive(el.dataset.pos)) {
@@ -1741,7 +1841,10 @@ function addRequestListener(element, action) {
             let options = {change: ["requestsRemove"], requestId: _id}
             if (portraitData) {
                 const swapPos = Object.keys(settingData.activeSpeakers).find(key => settingData.activeSpeakers[key]?.id === _id);
-                if (swapPos == "leftFirst") return
+                if (swapPos == "leftFirst") {
+                    await requestSettingsUpdate(settingData, options)
+                    return
+                }
                 let position = ["leftFirst"]
                 const leftFirstSpeaker = settingData.activeSpeakers["leftFirst"] || null
                 if (leftFirstSpeaker) {
@@ -1754,12 +1857,12 @@ function addRequestListener(element, action) {
                             img: leftFirstSpeaker.img,
                             name: `${leftFirstSpeaker.name}${leftFirstSpeaker.title ? `, ${leftFirstSpeaker.title}` : ""}`,
                         })
-                        if (settingData.order.length > 6) settingData.order["left"].shift()
+                        if (settingData.order["left"].length > 6) settingData.order["left"].shift()
                         options = {change: ["requestsRemove", "editOrder"], requestId: _id, side: "left"}
                     }
                 }
 
-                if (!settingData.activeSlots["left"].includes("leftFirst")) settingData.activeSlots["left"].push(["leftFirst"])
+                if (!settingData.activeSlots["left"].includes("leftFirst")) settingData.activeSlots["left"].push("leftFirst")
                 settingData.slidersText["left"][0] = portraitData.name
                 settingData.slidersText["left"][1] = portraitData.title
 
@@ -1806,7 +1909,7 @@ function addWeatherListener(option, dropdown) {
                             const weather = {
                                 name: html.find('input[name="name"]')[0].value || game.i18n.localize(`${C.ID}.createWeather.noName`),
                                 icon: "fas fa-" + (html.find('input[name="icon"]')[0].value || "question"),
-                                id: randomID()
+                                id: foundry.utils.randomID()
                             }
                             settingData.weatherList.push(weather)
                             await requestSettingsUpdate(settingData, {change: ["weatherList"]})
@@ -2048,3 +2151,165 @@ function contextMenuListener(element) {
     element.appendChild(dropdownListEl)
     document.addEventListener('click', closeDropdownOnClickOutside);
 }
+
+// Функция для адаптивного изменения размера текста
+function adjustTextSize() {
+    // Функция для проверки переполнения элемента
+    const isOverflowing = (element) => {
+        return element.scrollWidth > element.clientWidth;
+    };
+
+    // Функция для определения длины текста в пикселях (приблизительно)
+    const getTextWidth = (text, font) => {
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        context.font = font;
+        return context.measureText(text).width;
+    };
+
+    // Обрабатываем все элементы с именами
+    document.querySelectorAll('.vn-name').forEach(nameEl => {
+        const text = nameEl.textContent.trim();
+
+        // Очищаем предыдущие классы размера
+        nameEl.classList.remove('text-small', 'text-extra-small');
+
+        if (!text) return;
+
+        // Получаем текущий стиль элемента
+        const computedStyle = window.getComputedStyle(nameEl);
+        const containerWidth = nameEl.clientWidth;
+
+        // Устанавливаем CSS переменную для расчета размера
+        nameEl.style.setProperty('--name-length', text.length);
+
+        // Ждем следующий кадр для применения стилей
+        requestAnimationFrame(() => {
+            // Проверяем переполнение после применения базового размера
+            if (isOverflowing(nameEl) || text.length > 15) {
+                nameEl.classList.add('text-small');
+
+                // Если все еще переполняется, применяем extra-small
+                requestAnimationFrame(() => {
+                    if (isOverflowing(nameEl) || text.length > 25) {
+                        nameEl.classList.remove('text-small');
+                        nameEl.classList.add('text-extra-small');
+                    }
+                });
+            }
+        });
+
+        console.log(`Name "${text}" (${text.length} chars) - Container width: ${containerWidth}px`);
+    });
+
+    // Обрабатываем все элементы с титулами
+    document.querySelectorAll('.vn-title').forEach(titleEl => {
+        const text = titleEl.textContent.trim();
+
+        // Очищаем предыдущие классы размера
+        titleEl.classList.remove('text-small', 'text-extra-small');
+
+        if (!text) return;
+
+        const containerWidth = titleEl.clientWidth;
+
+        // Устанавливаем CSS переменную для расчета размера
+        titleEl.style.setProperty('--title-length', text.length);
+
+        // Ждем следующий кадр для применения стилей
+        requestAnimationFrame(() => {
+            // Проверяем переполнение после применения базового размера
+            if (isOverflowing(titleEl) || text.length > 25) {
+                titleEl.classList.add('text-small');
+
+                // Если все еще переполняется, применяем extra-small
+                requestAnimationFrame(() => {
+                    if (isOverflowing(titleEl) || text.length > 40) {
+                        titleEl.classList.remove('text-small');
+                        titleEl.classList.add('text-extra-small');
+                    }
+                });
+            }
+        });
+
+        console.log(`Title "${text}" (${text.length} chars) - Container width: ${containerWidth}px`);
+    });
+}
+
+// Оптимизированная версия с debounce для предотвращения частых вызовов
+let adjustTextTimeout;
+function debouncedAdjustTextSize() {
+    clearTimeout(adjustTextTimeout);
+    adjustTextTimeout = setTimeout(adjustTextSize, 100);
+}
+
+// Функция для обновления текста конкретного элемента (вызывать при изменении портрета)
+function updateElementText(position, portraitData) {
+    const isLeft = position.includes("left");
+    const isRight = position.includes("right");
+
+    if (position.includes("First") && (isLeft || isRight)) {
+        const side = isLeft ? "left" : "right";
+        const nameEl = document.querySelector(`#vn-${side}-text .vn-name`);
+        const titleEl = document.querySelector(`#vn-${side}-text .vn-title`);
+
+        if (nameEl) {
+            nameEl.textContent = portraitData?.name || "";
+            // Немедленно обновляем размер для этого элемента
+            adjustSingleElement(nameEl, 'name');
+        }
+
+        if (titleEl) {
+            titleEl.textContent = portraitData?.title || "";
+            // Немедленно обновляем размер для этого элемента
+            adjustSingleElement(titleEl, 'title');
+        }
+    }
+}
+
+// Функция для обновления размера одного элемента
+function adjustSingleElement(element, type) {
+    const text = element.textContent.trim();
+    const isName = type === 'name';
+    const maxLength = isName ? 15 : 25;
+    const extraMaxLength = isName ? 25 : 40;
+
+    // Очищаем предыдущие классы
+    element.classList.remove('text-small', 'text-extra-small');
+
+    if (!text) return;
+
+    // Устанавливаем CSS переменную
+    element.style.setProperty(isName ? '--name-length' : '--title-length', text.length);
+
+    requestAnimationFrame(() => {
+        const isOverflowing = element.scrollWidth > element.clientWidth;
+
+        if (isOverflowing || text.length > maxLength) {
+            element.classList.add('text-small');
+
+            requestAnimationFrame(() => {
+                const stillOverflowing = element.scrollWidth > element.clientWidth;
+                if (stillOverflowing || text.length > extraMaxLength) {
+                    element.classList.remove('text-small');
+                    element.classList.add('text-extra-small');
+                }
+            });
+        }
+    });
+}
+
+// Экспортируем функции для использования в main.js
+window.VNTextUtils = {
+    adjustTextSize: debouncedAdjustTextSize,
+    updateElementText: updateElementText,
+    adjustSingleElement: adjustSingleElement
+};
+
+// Инициализация при загрузке
+Hooks.once('ready', () => {
+    setTimeout(adjustTextSize, 1000);
+});
+
+// Обновление при изменении размера окна
+window.addEventListener('resize', debouncedAdjustTextSize);

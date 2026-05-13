@@ -117,7 +117,7 @@
                 {{!-- Тело портрера --}}
                 <div class="vn-pBody-left vn-pBody" style="z-index:{{speaker.zIndex}};" data-id="{{speaker.id}}" data-pos="{{speaker.pos}}" data-tooltip="{{speaker.name}}{{#if speaker.title}}, {{speaker.title}}{{/if}}">
                     {{!-- Контейнер портрета (нужен для корректного смещение и отзеркаливания для портретов в левой части) --}}
-                    <div class="vn-portrait {{#if speaker.active}}vn-main{{/if}} {{speaker.pos}}" style="z-index:{{speaker.zIndex}};transform: scaleX({{#if speaker.mirrorX}}1{{else}}-1{{/if}});{{#if speaker.widthEqualFrame}} width: 98%; height: auto;{{/if}}">
+                    <div class="vn-portrait {{#if speaker.active}}vn-main{{/if}} {{speaker.pos}}" style="z-index:{{speaker.zIndex}};transform: scaleX({{#if speaker.mirrorX}}-1{{else}}1{{/if}});{{#if speaker.widthEqualFrame}} width: 98%; height: auto;{{/if}}">
                         {{!-- Изображение портрета --}}
                         <img class="vn-port-left" src="{{speaker.img}}" style="left:{{speaker.offsetXl}}px; top:{{speaker.offsetY}}px; transform: scale({{speaker.scale}}%);"/>
                     </div> 
@@ -174,7 +174,7 @@
             <div class="vn-ew-portraits flexrow">
                 {{#each activeSpeakers.left as |speaker|}}
                     <div data-pos="{{speaker.pos}}" data-id="{{speaker.id}}" class="vn-ew-slot{{#if (eq ../highlightEl speaker.pos)}} vn-hlight {{/if}}{{#if speaker.active}} vn-active{{/if}}">
-                        <img data-pos="{{speaker.pos}}" src="{{speaker.img}}" data-id="{{speaker.id}}" style="transform: scaleX({{#if speaker.mirrorX}}1{{else}}-1{{/if}});{{#unless speaker.img}}display: none;{{/unless}}"/>
+                        <img data-pos="{{speaker.pos}}" src="{{speaker.img}}" data-id="{{speaker.id}}" style="transform: scaleX({{#if speaker.mirrorX}}-1{{else}}1{{/if}});{{#unless speaker.img}}display: none;{{/unless}}"/>
                     </div>
                 {{/each}}
                 <div class="vm-ew-mid-border"></div>

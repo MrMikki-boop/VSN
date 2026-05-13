@@ -1,5 +1,6 @@
 export const Constants = {
     ID: "visual-novel-dialogues",
+    defaultBackupFolder: "visual-novel-backups",
     backgroundPlaceholder: () => game.settings.get(Constants.ID, "backgroundPlaceholder"),
     portraitFoldersPath: () => game.settings.get(Constants.ID, "portraitFoldersPath"),
     backgoundFoldersPath: () => game.settings.get(Constants.ID, "backgoundFoldersPath"),
@@ -30,7 +31,42 @@ export const getTags = (source, arr = [game.i18n.localize(`${Constants.ID}.place
 
 export const getPortrait = (id, settings = getSettings()) => settings.portraits.find(m => m.id == id)
 
+export function normalizePortraitName(name = "") {
+    return String(name || "").split(/\s+\/\s+/)[0].trim();
+}
+
+export function isDefaultImage(src) {
+    return !src || src.includes("icons/svg/mystery-man");
+}
+
+export function getActorPortraitImage(actor, {preferToken = game.settings.get(Constants.ID, "useTokenForPortraits"), fallbackUser = null} = {}) {
+    const tokenImg = actor?.prototypeToken?.texture?.src;
+    const actorImg = actor?.img;
+    const userImg = fallbackUser?.avatar;
+    const candidates = preferToken ? [tokenImg, actorImg, userImg] : [actorImg, tokenImg, userImg];
+    return candidates.find(src => !isDefaultImage(src)) || "";
+}
+
+export function getActorPortraitData(actor, {existing = {}, img = null, fallbackUser = null} = {}) {
+    const name = existing.name || actor?.prototypeToken?.name || actor?.name || fallbackUser?.name || "";
+    return {
+        img: img ?? existing.img ?? getActorPortraitImage(actor, {fallbackUser}),
+        name: normalizePortraitName(name),
+        title: existing.title || "",
+        tag: existing.tag || getTags(actor?.folder),
+        id: actor?.id || fallbackUser?.id,
+        scale: existing.scale ?? 100,
+        offsetXl: existing.offsetXl ?? 0,
+        offsetXr: existing.offsetXr ?? 0,
+        offsetY: existing.offsetY ?? 0,
+        mirrorX: existing.mirrorX ?? false,
+        widthEqualFrame: existing.widthEqualFrame ?? game.settings.get(Constants.ID, "worldWidthEqualFrame"),
+        hasActor: !!actor
+    };
+}
+
 export const updatePortrait = async (id, newData, settings = getSettings(), _return = false) => {
+    if (newData?.name) newData.name = normalizePortraitName(newData.name);
     if (getPortrait(id, settings)) {
         settings.portraits = settings.portraits.map(m => m.id == id ? newData : m)
     } else {
@@ -66,26 +102,56 @@ export const getEmptyActiveSpeakers = (sides = ["left", "right", "center"], numb
     return _obj;
 }
 
-export async function createBackup() {
-    const backupPath = "visual-novel-backups"; // Relative path in user data directory
-    let count = { files: [] }; // Default empty file list
-    try {
-        // Attempt to browse the backup directory
-        count = await FilePicker.browse("data", backupPath);
-    } catch (error) {
-        // If directory doesn't exist, create it
-        console.warn(`%c${game.i18n.localize(`${Constants.ID}.errors.createBackup`)}: Creating directory`, "color:orange");
-        await FilePicker.createDirectory("data", backupPath, { bucket: null });
+export function getBackupFolder() {
+    const settingKey = `${Constants.ID}.backupFolder`;
+    if (game.settings.settings.has(settingKey)) {
+        return game.settings.get(Constants.ID, "backupFolder") || Constants.defaultBackupFolder;
     }
-    // Create and upload the backup file
-    const fileName = `settingDataBackup-${count.files.length}.json`;
+    return Constants.defaultBackupFolder;
+}
+
+async function ensureDataDirectory(folderPath) {
+    const normalized = folderPath.replace(/^\/+|\/+$/g, "");
+    if (!normalized) return "";
+
+    let current = "";
+    for (const segment of normalized.split("/").filter(Boolean)) {
+        current = current ? `${current}/${segment}` : segment;
+        try {
+            await FilePicker.browse("data", current);
+        } catch (error) {
+            await FilePicker.createDirectory("data", current, { bucket: null });
+        }
+    }
+    return normalized;
+}
+
+export async function createBackup({ folder = null, tag = "", notify = true } = {}) {
+    const backupPath = await ensureDataDirectory(folder || getBackupFolder());
+    const date = new Date();
+    const pad = n => String(n).padStart(2, "0");
+    const stamp = [
+        date.getFullYear(),
+        pad(date.getMonth() + 1),
+        pad(date.getDate()),
+        `${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`
+    ].join("-");
+    const fileName = `visual-novel-dialogues-${tag ? `${tag}-` : ""}${stamp}.json`;
+    const payload = {
+        type: `${Constants.ID}.vnData`,
+        moduleVersion: game.modules.get(Constants.ID)?.version,
+        createdAt: date.toISOString(),
+        data: game.settings.get(Constants.ID, "vnData")
+    };
     const newFile = new File(
-        [JSON.stringify(game.settings.get(Constants.ID, 'vnData'))],
+        [JSON.stringify(payload, null, 2)],
         fileName,
         { type: "application/json" }
     );
+
     await FilePicker.upload("data", backupPath, newFile, {}, { notify: false });
-    console.log(game.i18n.localize(`${Constants.ID}.backupCreated`) + ` ${fileName}`);
+    if (notify) ui.notifications.info(`${game.i18n.localize(`${Constants.ID}.settings.backupCreated`)} ${backupPath}/${fileName}`);
+    return `${backupPath}/${fileName}`;
 }
 
 export const getTextureSize = async (imgPath) => {

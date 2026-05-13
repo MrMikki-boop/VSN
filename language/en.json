@@ -26,8 +26,10 @@
             "selectorMenu": "Button selector menu",
             "selectorMenuLabel": "Change",
             "selectorMenuHint": "The buttons of the chosen tabs will be displayed in the Visual Novel selector in the upper right corner",
-            "makesBackup": "Backup module settings when logging in",
-            "makesBackupHint": "Every time you enter the world, the module will save its settings in compressed form in the modules' folder -' settingsBackups'",
+            "makesBackup": "Legacy automatic backups",
+            "makesBackupHint": "Kept only for compatibility with older worlds. Startup backups are disabled; use manual export instead.",
+            "backupFolder": "Backup folder",
+            "backupFolderHint": "Folder in Foundry user data where manual Visual Novel Dialogues exports are saved.",
             "slotCount": "Default number of portrait slots (up to 5)",
             "slotCountHint": "The number of portrait slots in Visual Novel for each side as default",
             "sideMainName": "The name of the outermost character is displayed",
@@ -38,7 +40,7 @@
             "backupCreated": "The backup has been created ✔",
             "createBackup": "Create backup",
             "createBackupLabel": "Settings Export",
-            "createBackupHint": "Create a backup of module settings and save it in the module folder \"settingsBackups\"",
+            "createBackupHint": "Create a manual backup of module settings and save it in the configured backup folder.",
             "worldWidthEqualFrame": "Width of ALL portraits = width of frames",
             "worldWidthEqualFrameHint": "If enabled, the width of all portraits in the VN window will always be equal to the width of the frame instead of the height.",
             "localizeUpdated": "Localization updated ✔",
@@ -134,7 +136,10 @@
             "add-portrait-button": "Add portrait",
             "deletePortrait": "Delete portrait",
             "editPortrait": "Edit portrait",
-            "openActor": "Open linked actor"
+            "openActor": "Open linked actor",
+            "portraitAlreadyExists": "A portrait for this actor already exists",
+            "noImageFound": "No usable image was found for this actor",
+            "portraitCreated": "Portrait created"
         },
         "actorPickerSub": {
             "image-title": "Portrait",
@@ -154,7 +159,8 @@
             "button": "Select file",
             "makeNewBackup": "Create a new backup file before restoring",
             "confirm": "Confirm",
-            "success": "The settings have been successfully restored from the backup file"
+            "success": "The settings have been successfully restored from the backup file",
+            "invalid": "The selected backup file does not contain valid Visual Novel settings"
         },
         "dialogue": {
             "cancel": "Cancel",
@@ -216,6 +222,7 @@
             "noSheet": "Couldn't find the character sheet. Make sure you have an active character selected",
             "noPortrait": "No portrait in the active cell to change its properties",
             "noCharacter": "Couldn't find an image of your character Make sure you have selected a character in the user menu",
+            "noImageAvailable": "Couldn't find a usable image for your character. Set an actor portrait, token image, or user avatar.",
             "portraitNotFound": "The portrait has not been found Please try reopening the ActorPicker window or click on the \"Check Actor and Portrait Validity\" button (magnifying glass icon)",
             "createBackup": "The backup folder of the Visual Novel Dialogues module could not be found. It will be created in the module folder and named \"settingsBackups\"",
             "backImgDosntChange": "The background has not been changed. Close and reopen the VN window to change the background",

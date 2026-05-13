@@ -120,8 +120,10 @@ Hooks.once('init', function() {
     registerSettings("headerPortraitButton", "client", true, Boolean, false)
     // Отображается имя крайнего персонажа
     registerSettings("sideMainName", "client", true, Boolean, true, null, true)
-    // Делать бекапы при запуске мира
-    registerSettings("makesBackup", "world", true, Boolean, true)
+    // Legacy flag kept registered for old worlds; startup backups are intentionally disabled.
+    registerSettings("makesBackup", "world", false, Boolean, false)
+    // Папка для ручных экспортов настроек
+    registerSettings("backupFolder", "world", true, String, C.defaultBackupFolder, "folder")
     // Звук заявок
     registerSettings("requestsSound", "client", true, Boolean, true)
     // Отображать панель инструментов
@@ -279,6 +281,18 @@ class VNDLayer extends foundry.canvas.layers.InteractionLayer {
 }
 
 Hooks.on("ready", async () => {
+    const module = game.modules.get(C.ID);
+    if (module) {
+        module.api = {
+            getSettings,
+            createBackup,
+            open: () => VisualNovelDialogues.instance?.render(true),
+            toggle: (...args) => VisualNovelDialogues.turnVN(...args),
+            renderForAll: () => VisualNovelDialogues.renderForAll()
+        };
+        globalThis.VisualNovelDialogues = module.api;
+    }
+
     if (!game.user.isGM) return
     // Добавляем пунктик
     let permSettings = game.settings.get(C.ID, "playersPermissions")
@@ -293,11 +307,6 @@ Hooks.on("ready", async () => {
         hasChanges = true
     }
     if (hasChanges) await game.settings.set(C.ID, "vnData", settings)
-    // Бекап
-    if (game.settings.get(C.ID, "makesBackup")) {
-        await createBackup();
-    }
-
     // Стили
     document.documentElement.style.setProperty("--vsm-ui-border-color", "#44191A");
 })

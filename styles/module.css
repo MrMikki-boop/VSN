@@ -610,13 +610,13 @@ i.vn-request-icon {
 
 @keyframes moveUpDownL {
     0% {
-        transform: translate(-13%, 0) scaleX(-1);
+        transform: translate(-13%, 0);
     }
     50% {
-        transform: translate(-13%, 1vh) scaleX(-1);
+        transform: translate(-13%, 1vh);
     }
     100% {
-        transform: translate(-13%, 0) scaleX(-1);
+        transform: translate(-13%, 0);
     }
 }
 
@@ -672,32 +672,134 @@ i.vn-request-icon {
     animation: portInBack 0.65s ease-in-out forwards;
 }
 
+/* Базовые стили для имен и титулов */
 .vn-title, .vn-name {
     color: white;
     text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;
     text-align: center;
     position: absolute;
     line-height: 100%;
+
+    /* Ограничиваем ширину и размещение */
+    left: 2%;
+    right: 2%;
+    width: 96%;
+
+    /* Убираем многоточие, позволяем тексту адаптироваться */
+    white-space: nowrap;
+    overflow: visible;
 }
 
+/* Имена персонажей */
 .vn-name {
-    font-size: 2.5vw;
     font-family: "Manuskript";
-    transform: translateY(130%);
+    transform: translateY(130%) translateX(50%);
+
+    /* Адаптивный размер шрифта с помощью CSS clamp */
+    font-size: clamp(1.2vw, 2.5vw, 2.5vw);
+
+    /* Дополнительное уменьшение для очень длинного текста */
+    font-size: min(2.5vw, calc(96vw / var(--name-length, 10)));
 }
 
+/* Титулы персонажей */
 .vn-title {
-    font-size: 1vw;
     font-family: "OCR-A";
     top: 80%;
-    transform: translateY(630%);
+    transform: translateY(625%) translateX(50%);
+
+    /* Адаптивный размер шрифта */
+    font-size: clamp(0.6vw, 1vw, 1vw);
+
+    /* Дополнительное уменьшение для очень длинного текста */
+    font-size: min(1vw, calc(96vw / var(--title-length, 15)));
 }
 
+/* Контейнер текста */
 .vn-text-box {
     position: relative;
     justify-items: center;
     display: grid;
     height: 0;
+    width: 100%;
+
+    /* Устанавливаем максимальные границы */
+    max-width: 300px; /* Ограничение ширины контейнера */
+}
+
+/* Специальные классы для левой и правой стороны */
+.vn-left-text .vn-name,
+.vn-right-text .vn-name {
+    /* Ограничиваем ширину для боковых элементов */
+    max-width: 280px;
+    left: 50%;
+    transform: translateX(25%) translateY(130%);
+}
+
+.vn-left-text .vn-title,
+.vn-right-text .vn-title {
+    /* Ограничиваем ширину для боковых элементов */
+    max-width: 280px;
+    left: 50%;
+    transform: translateX(550%) translateY(630%);
+}
+
+/* Классы для разных размеров текста */
+.vn-name.text-small {
+    font-size: clamp(1.0vw, 1.8vw, 1.8vw) !important;
+}
+
+.vn-name.text-extra-small {
+    font-size: clamp(0.8vw, 1.4vw, 1.4vw) !important;
+    transform: translateX(62%) translateY(260%);
+}
+
+.vn-title.text-small {
+    font-size: clamp(0.8vw, 0.9vw, 0.9vw) !important;
+    transform: translateX(60%) translateY(665%);
+}
+
+.vn-title.text-extra-small {
+    font-size: clamp(0.5vw, 0.7vw, 0.7vw) !important;
+    transform: translateX(62%) translateY(260%);
+}
+
+/* Медиа-запросы для адаптивности */
+@media (max-width: 1200px) {
+    .vn-text-box {
+        max-width: 250px;
+    }
+
+    .vn-left-text .vn-name,
+    .vn-right-text .vn-name,
+    .vn-left-text .vn-title,
+    .vn-right-text .vn-title {
+        max-width: 230px;
+    }
+}
+
+@media (max-width: 768px) {
+    .vn-text-box {
+        max-width: 200px;
+    }
+
+    .vn-left-text .vn-name,
+    .vn-right-text .vn-name,
+    .vn-left-text .vn-title,
+    .vn-right-text .vn-title {
+        max-width: 180px;
+    }
+}
+
+/* Альтернативный подход с использованием CSS Container Queries (для современных браузеров) */
+@container (max-width: 300px) {
+    .vn-name {
+        font-size: 1.8vw;
+    }
+
+    .vn-title {
+        font-size: 0.7vw;
+    }
 }
 
 .ap-collapse-spec {
@@ -2924,6 +3026,703 @@ i.vn-request-icon {
     position: absolute;
     bottom: 0;
     justify-self: center;
+}
+
+/* Modern V13 UI layer */
+:root {
+    --vnd-panel-bg: rgba(24, 27, 31, 0.92);
+    --vnd-panel-bg-soft: rgba(39, 43, 49, 0.9);
+    --vnd-panel-border: rgba(222, 226, 232, 0.18);
+    --vnd-panel-border-strong: rgba(223, 170, 78, 0.72);
+    --vnd-text: #f3efe6;
+    --vnd-text-muted: #b8c0c7;
+    --vnd-accent: #d7a44a;
+    --vnd-accent-blue: #6aa6b8;
+    --vnd-danger: #c94d43;
+    --vnd-radius: 8px;
+    --vnd-slot-ratio: 3 / 4;
+}
+
+.vn-actor-picker .window-content,
+.ap-sub-body .window-content {
+    background: var(--vnd-panel-bg);
+    color: var(--vnd-text);
+    padding: 0;
+}
+
+.vn-actor-picker .window-header,
+.ap-sub-body .window-header {
+    background: #1b1d21;
+    border-bottom: 1px solid var(--vnd-panel-border);
+    color: var(--vnd-text);
+}
+
+#vn-actor-picker {
+    height: 100%;
+    gap: 10px;
+    padding: 10px;
+    background: linear-gradient(180deg, rgba(32, 35, 40, 0.96), rgba(24, 26, 30, 0.96));
+}
+
+.ac-portraits {
+    align-items: center;
+    gap: 6px;
+    min-height: 72px;
+    max-height: none;
+    margin: 0;
+    padding: 8px;
+    border: 1px solid var(--vnd-panel-border);
+    border-radius: var(--vnd-radius);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.vn-ac-slot,
+.vn-ew-slot {
+    aspect-ratio: var(--vnd-slot-ratio);
+    height: auto;
+    min-height: 0;
+    margin: 0;
+    overflow: hidden;
+    border: 1px solid var(--vnd-panel-border);
+    border-radius: var(--vnd-radius);
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.32);
+}
+
+.vn-ac-slot {
+    flex: 0 0 48px;
+    width: 48px;
+    min-width: 48px;
+}
+
+.vn-ew-slot {
+    flex: 1 1 36px;
+    width: auto;
+    min-width: 34px;
+    max-width: 48px;
+}
+
+.vn-ac-slot.vn-hlight,
+.vn-ew-slot.vn-hlight:not(.vn-disabled),
+.vn-ew-slot.vn-active.vn-hlight {
+    border-color: var(--vnd-panel-border-strong);
+    box-shadow: 0 0 0 2px rgba(215, 164, 74, 0.22), inset 0 0 0 1px rgba(215, 164, 74, 0.2);
+}
+
+.vn-ew-slot.vn-active:not(.vn-hlight) {
+    border-color: rgba(106, 166, 184, 0.72);
+    box-shadow: 0 0 0 2px rgba(106, 166, 184, 0.16), inset 0 -24px 26px -18px rgba(106, 166, 184, 0.72);
+}
+
+.vn-ew-slot::before {
+    display: none;
+}
+
+.ac-portraits img,
+#vn-edit-window img {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    border-radius: calc(var(--vnd-radius) - 1px);
+    object-fit: cover;
+    object-position: center top;
+}
+
+.ac-mid-border,
+.vm-ew-mid-border {
+    width: 1px;
+    align-self: stretch;
+    margin: 0 4px;
+    background: var(--vnd-panel-border);
+}
+
+.ac-body {
+    min-height: 0;
+    max-height: none;
+    gap: 10px;
+}
+
+.ac-filter-body {
+    min-width: 190px;
+    padding: 8px;
+    border: 1px solid var(--vnd-panel-border);
+    border-radius: var(--vnd-radius);
+    background: rgba(255, 255, 255, 0.035);
+}
+
+.ac-filter {
+    padding: 0 0 12px;
+}
+
+.ac-filter-title {
+    margin: 0 0 8px;
+    padding: 6px 8px;
+    border: 0;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--vnd-text);
+    font-family: var(--font-primary);
+    font-size: 14px;
+    font-weight: 700;
+    text-shadow: none;
+}
+
+.ac-filter-option {
+    gap: 8px;
+    min-height: 28px;
+    padding: 3px 4px;
+}
+
+.ac-filter-option input {
+    width: 16px;
+    height: 16px;
+    max-width: none;
+    margin: 0;
+}
+
+.ac-filter-option label {
+    color: var(--vnd-text-muted);
+    font-family: var(--font-primary);
+    font-size: 13px;
+    font-weight: 500;
+    text-shadow: none;
+}
+
+.ac-aList-body {
+    min-width: 330px;
+    min-height: 0;
+    border-left: 0;
+}
+
+.ac-search-input {
+    width: 100% !important;
+    height: 34px;
+    max-height: none;
+    margin: 0 0 8px !important;
+    padding: 0 10px;
+    border: 1px solid var(--vnd-panel-border);
+    border-radius: var(--vnd-radius);
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--vnd-text);
+}
+
+.ac-search-input::placeholder {
+    color: var(--vnd-text-muted);
+}
+
+.ac-actor-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 0;
+    border-top: 0;
+    padding: 0 4px 0 0;
+    margin: 0;
+    overflow-y: auto;
+}
+
+.ac-actor-list li {
+    min-height: 76px;
+    align-items: stretch;
+    gap: 10px;
+    border: 1px solid var(--vnd-panel-border);
+    border-radius: var(--vnd-radius);
+    background: var(--vnd-panel-bg-soft);
+    box-shadow: none;
+    overflow: hidden;
+}
+
+.ac-actor-list li:hover {
+    border-color: rgba(215, 164, 74, 0.5);
+    background: rgba(50, 54, 60, 0.96);
+}
+
+.ac-actor-list li > img {
+    flex: 0 0 54px;
+    width: 54px;
+    height: 72px;
+    align-self: center;
+    margin-left: 4px;
+    border-radius: 6px;
+    object-fit: cover;
+    object-position: center top;
+}
+
+.ac-actor-text {
+    min-width: 0;
+    padding: 10px 64px 8px 0;
+}
+
+.ac-actor-name,
+.ac-actor-title {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    color: var(--vnd-text);
+    font-family: var(--font-primary);
+    text-shadow: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ac-actor-name {
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.ac-actor-title {
+    margin-top: 6px;
+    color: var(--vnd-text-muted);
+    font-size: 12px;
+}
+
+.ac-buttons-container {
+    top: 8px;
+    right: 8px;
+    gap: 4px;
+}
+
+.ac-buttons-container button,
+.vn-small-button,
+.vn-edit-cancel,
+.vn-edit-apply,
+.vn-edit-zeroSettings,
+.vn-edit-deleteActor {
+    border: 1px solid var(--vnd-panel-border) !important;
+    border-radius: 6px !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: var(--vnd-text) !important;
+    box-shadow: none !important;
+}
+
+.ac-buttons-container button {
+    width: 24px;
+    height: 24px;
+    border-right: 1px solid var(--vnd-panel-border) !important;
+    border-top: 1px solid var(--vnd-panel-border) !important;
+}
+
+.ac-buttons-container button:hover,
+.vn-small-button:hover,
+.vn-edit-cancel:hover,
+.vn-edit-apply:hover,
+.vn-edit-zeroSettings:hover,
+.vn-edit-deleteActor:hover {
+    border-color: var(--vnd-panel-border-strong) !important;
+    background: rgba(215, 164, 74, 0.16) !important;
+}
+
+.ac-delete-button,
+.vn-edit-deleteActor:hover {
+    background: rgba(201, 77, 67, 0.22) !important;
+}
+
+#vn-edit-window {
+    color: var(--vnd-text);
+    background: var(--vnd-panel-bg);
+    border: 1px solid var(--vnd-panel-border);
+    border-radius: var(--vnd-radius);
+    padding: 10px;
+    text-shadow: none;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+}
+
+.vn-ew-header {
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.vn-ew-header > div {
+    margin: 0;
+}
+
+.aps-title {
+    color: var(--vnd-text);
+    font-family: var(--font-primary);
+    font-size: 14px !important;
+    font-weight: 750;
+    line-height: 1.15;
+    text-shadow: none;
+}
+
+.vn-ew-portraits {
+    align-items: center;
+    gap: 6px;
+    min-height: 64px;
+    padding: 8px;
+    border: 1px solid var(--vnd-panel-border);
+    border-radius: var(--vnd-radius);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+#vn-edit-window .form-fields {
+    margin: 6px 0 10px;
+}
+
+#vn-edit-window input[type="text"] {
+    width: 100%;
+    height: 32px;
+    border: 1px solid var(--vnd-panel-border);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--vnd-text);
+    padding: 0 8px;
+}
+
+#vn-edit-window input[type="text"]::placeholder {
+    color: var(--vnd-text-muted);
+}
+
+.vn-edid-slider-container {
+    display: grid;
+    gap: 8px;
+    margin-top: 10px;
+    padding: 10px 0 0;
+    border-top: 1px solid var(--vnd-panel-border);
+}
+
+.vn-edid-slider-container label,
+.vn-edit-additional label {
+    color: var(--vnd-text-muted);
+    font-family: var(--font-primary);
+    font-size: 12px;
+    font-weight: 650;
+    text-shadow: none;
+}
+
+.vn-edit-slider {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 44px;
+    gap: 8px;
+    align-items: center;
+}
+
+.vn-edit-slider input[type="range"] {
+    width: 100%;
+    accent-color: var(--vnd-accent);
+}
+
+.vn-edit-slider span {
+    width: auto;
+    color: var(--vnd-text);
+    font-family: var(--font-mono, monospace);
+    font-size: 12px;
+    text-align: right;
+}
+
+.vn-edit-additional {
+    gap: 8px;
+}
+
+.vn-edit-additional div {
+    min-height: 44px;
+    justify-content: space-between;
+    gap: 8px;
+    margin: 0;
+    padding: 8px;
+    border: 1px solid var(--vnd-panel-border);
+    border-radius: var(--vnd-radius);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.vn-edit-additional input {
+    max-width: none;
+    width: 18px;
+    height: 18px;
+    accent-color: var(--vnd-accent-blue);
+}
+
+.vn-edit-buttons-container {
+    gap: 6px;
+    height: 34px;
+    margin-top: 12px;
+}
+
+.vn-edit-buttons-container label {
+    color: var(--vnd-text);
+    text-shadow: none;
+    font-weight: 650;
+    line-height: normal;
+}
+
+.vn-edit-buttons-container i,
+.vn-small-button i,
+.ac-buttons-container button i {
+    color: currentColor;
+    text-shadow: none;
+}
+
+/* Compact warm correction layer */
+:root {
+    --vnd-panel-bg: rgba(226, 222, 205, 0.94);
+    --vnd-panel-bg-soft: rgba(246, 242, 224, 0.78);
+    --vnd-panel-border: rgba(73, 64, 51, 0.34);
+    --vnd-panel-border-strong: rgba(187, 139, 10, 0.82);
+    --vnd-text: #241d17;
+    --vnd-text-muted: #6b5d4b;
+    --vnd-accent: #bb8b0a;
+    --vnd-accent-blue: #4e8290;
+}
+
+.vn-actor-picker .window-content,
+.ap-sub-body .window-content {
+    background: rgba(219, 216, 198, 0.96);
+    color: var(--vnd-text);
+}
+
+.vn-actor-picker .window-header,
+.ap-sub-body .window-header {
+    background: rgba(42, 36, 29, 0.95);
+    border-bottom-color: rgba(187, 139, 10, 0.52);
+    color: #f7f1e2;
+}
+
+#vn-actor-picker {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    height: 100%;
+    gap: 6px;
+    padding: 6px;
+    background:
+        radial-gradient(circle at 20% 0%, rgba(255, 250, 230, 0.52), transparent 34%),
+        linear-gradient(rgba(238, 234, 215, 0.94), rgba(216, 211, 192, 0.94));
+}
+
+.ac-portraits {
+    flex: 0 0 auto !important;
+    justify-content: center;
+    min-height: 0;
+    height: 62px;
+    max-height: 62px;
+    gap: 5px;
+    padding: 5px 8px;
+    border-color: rgba(84, 75, 58, 0.38);
+    background: rgba(255, 255, 255, 0.16);
+}
+
+.vn-ac-slot {
+    flex: 0 0 39px;
+    width: 39px;
+    min-width: 39px;
+}
+
+.vn-ew-slot {
+    flex: 0 1 32px;
+    min-width: 28px;
+    max-width: 36px;
+}
+
+.vn-ac-slot,
+.vn-ew-slot {
+    background: rgba(246, 242, 224, 0.74);
+    border-color: rgba(50, 44, 35, 0.48);
+}
+
+.ac-body {
+    display: grid !important;
+    grid-template-columns: minmax(175px, 42%) minmax(260px, 1fr);
+    min-height: 0;
+    height: 100%;
+    gap: 6px;
+}
+
+.ac-filter-body,
+.ac-aList-body {
+    min-height: 0;
+    height: 100%;
+    border-color: rgba(84, 75, 58, 0.38);
+    background: rgba(255, 255, 255, 0.17);
+}
+
+.ac-filter-body {
+    min-width: 0;
+    padding: 6px;
+}
+
+.ac-aList-body {
+    display: grid !important;
+    grid-template-rows: 30px minmax(0, 1fr);
+    min-width: 0;
+}
+
+.ac-footer {
+    display: none;
+}
+
+.ac-filter {
+    padding: 0 0 8px;
+}
+
+.ac-filter-title {
+    margin-bottom: 6px;
+    padding: 4px 7px;
+    background: rgba(80, 72, 56, 0.14);
+    color: var(--vnd-text);
+    font-size: 13px;
+}
+
+.ac-filter-option {
+    min-height: 24px;
+}
+
+.ac-filter-option label {
+    color: var(--vnd-text);
+}
+
+.ac-search-input {
+    height: 30px;
+    margin: 0 0 6px !important;
+    background: rgba(255, 255, 255, 0.64);
+    color: var(--vnd-text);
+}
+
+.ac-actor-list {
+    gap: 4px;
+    padding-right: 3px;
+}
+
+.ac-actor-list li {
+    min-height: 58px;
+    gap: 8px;
+    background: rgba(246, 242, 224, 0.72);
+    border-color: rgba(84, 75, 58, 0.32);
+}
+
+.ac-actor-list li:hover {
+    background: rgba(255, 250, 231, 0.88);
+}
+
+.ac-actor-list li > img {
+    flex-basis: 39px;
+    width: 39px;
+    height: 52px;
+    margin-left: 4px;
+}
+
+.ac-actor-text {
+    padding: 8px 58px 6px 0;
+}
+
+.ac-actor-name,
+.ac-actor-title {
+    color: var(--vnd-text);
+    font-family: "Noto Serif", var(--font-primary);
+}
+
+.ac-actor-name {
+    font-size: 14px;
+}
+
+.ac-actor-title {
+    margin-top: 4px;
+    color: var(--vnd-text-muted);
+}
+
+.ac-buttons-container {
+    top: 6px;
+    right: 6px;
+}
+
+.ac-buttons-container button {
+    width: 21px;
+    height: 21px;
+    color: #2f2921 !important;
+    background: rgba(255, 255, 255, 0.45) !important;
+}
+
+#vn-edit-window {
+    background:
+        radial-gradient(circle at 20% 0%, rgba(255, 250, 230, 0.42), transparent 34%),
+        linear-gradient(rgba(229, 225, 207, 0.9), rgba(214, 209, 190, 0.9));
+    border-color: rgba(60, 52, 42, 0.46);
+    color: var(--vnd-text);
+    padding: 7px;
+    text-shadow: 0 1px 1px rgba(255, 255, 255, 0.48);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.36);
+}
+
+.vn-ew-header {
+    gap: 4px;
+    margin-bottom: 6px;
+    cursor: grab;
+}
+
+#vn-edit-window.vn-dragging .vn-ew-header {
+    cursor: grabbing;
+}
+
+.vn-ew-portraits {
+    flex: 0 0 auto;
+    min-height: 49px;
+    max-height: 49px;
+    gap: 4px;
+    padding: 4px;
+    background: rgba(255, 255, 255, 0.16);
+}
+
+.aps-title {
+    color: var(--vnd-text);
+    font-family: "Noto Serif", var(--font-primary);
+    font-size: 15px !important;
+    text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
+}
+
+#vn-edit-window .form-fields {
+    margin: 4px 0 8px;
+}
+
+#vn-edit-window input[type="text"] {
+    height: 29px;
+    background: rgba(255, 255, 255, 0.38);
+    color: var(--vnd-text);
+}
+
+.vn-edid-slider-container {
+    gap: 5px;
+    margin-top: 7px;
+    padding-top: 7px;
+}
+
+.vn-edid-slider-container label,
+.vn-edit-additional label {
+    color: #4a3e31;
+    font-family: "Noto Serif", var(--font-primary);
+    font-size: 12px;
+}
+
+.vn-edit-slider {
+    grid-template-columns: minmax(0, 1fr) 36px;
+    gap: 6px;
+}
+
+.vn-edit-additional {
+    gap: 6px;
+}
+
+.vn-edit-additional div {
+    min-height: 38px;
+    padding: 5px 7px;
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.vn-edit-buttons-container {
+    height: 31px;
+    gap: 5px;
+    margin-top: 8px;
+}
+
+.vn-edit-cancel,
+.vn-edit-apply,
+.vn-edit-zeroSettings,
+.vn-edit-deleteActor,
+.vn-small-button {
+    color: #f7f1e2 !important;
+    background: rgba(58, 54, 48, 0.9) !important;
+}
+
+.vn-edit-buttons-container label {
+    color: #f7f1e2;
 }
 
 /*# sourceMappingURL=module.css.map */

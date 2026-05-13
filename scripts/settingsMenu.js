@@ -1,4 +1,4 @@
-import { Constants as C, createBackup, defaultPermissions, getSettings, selectorArray } from './const.js';
+import { Constants as C, createBackup, defaultPermissions, getBackupFolder, getSettings, selectorArray } from './const.js';
 import { VisualNovelDialogues } from './main.js';
 import { SlidersSetClass } from './slidersSetClass.js';
 
@@ -102,7 +102,7 @@ export class RestoreFromBackup extends FormApplication {
         html.find('.rfb-file-picker').on('click', async (event) => {
             const fp = new foundry.applications.apps.FilePicker.implementation({
                 classes: ["filepicker"],
-                current: `${game.data.userDataPath}/visual-novel-backups`,
+                current: getBackupFolder(),
                 type: "file",
                 displayMode: "list",
                 callback: async (file) => {
@@ -120,10 +120,15 @@ export class RestoreFromBackup extends FormApplication {
                 return
             }
             if (html[0].querySelector('.rfb-create-backup')?.checked) {
-                await createBackup()
+                await createBackup({tag: "pre-restore"})
             }
             const backup = await foundry.utils.fetchJsonWithTimeout(file)
-            await game.settings.set(C.ID, 'vnData', backup)
+            const restoredData = backup?.type === `${C.ID}.vnData` ? backup.data : backup
+            if (!restoredData || typeof restoredData !== "object") {
+                ui.notifications.error(game.i18n.localize(`${C.ID}.restoreFromBackup.invalid`))
+                return
+            }
+            await game.settings.set(C.ID, 'vnData', restoredData)
             ui.notifications.info(game.i18n.localize(`${C.ID}.restoreFromBackup.success`) + ` ${file} ✔`)
         })
     }
@@ -149,7 +154,6 @@ export class CreateBackup extends FormApplication {
     }
     static async createBackup(app) {
         await createBackup();
-        console.log(game.i18n.localize(`${C.ID}.settings.backupCreated`));
         app.close({ force: true });
     }
 }

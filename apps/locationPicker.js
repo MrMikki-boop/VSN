@@ -1,4 +1,4 @@
-import { Constants as C, getEmptyActiveSpeakers, getLocation, getSettings, getTextureSize, requestSettingsUpdate } from '../scripts/const.js';
+import { Constants as C, getEmptyActiveSpeakers, getLocation, getPortrait, getSettings, getTextureSize, normalizePortraitName, requestSettingsUpdate } from '../scripts/const.js';
 import { VNLocation } from '../scripts/locationClass.js';
 
 
@@ -529,12 +529,12 @@ export class LocationPickerSettings extends FormApplication {
             const presetData = {
                 locationData: settings.location,
                 portraits: copyPotraits ? settings.activeSpeakers : {},
-                id: randomID()
+                id: foundry.utils.randomID()
             }
             const _linkChanges = (changeCurrent || (settings.location.id == id)) && settings.linkChanges
             let locations = changeCurrent ? [settings.location] : [settings.locationList.find(m => m.id == id)]
             if (_linkChanges) locations.push(changeCurrent ? settings.locationList.find(m => m.id == id) : settings.location)
-            locations.forEach(l => {if (!l.presets) l.presets = []; l.presets.push(deepClone(presetData))})
+            locations.forEach(l => {if (!l.presets) l.presets = []; l.presets.push(foundry.utils.deepClone(presetData))})
             await requestSettingsUpdate(settings)
             LocationPickerSettings.refresh(changeCurrent ? "current" : id)
         }
@@ -560,14 +560,32 @@ export class LocationPickerSettings extends FormApplication {
             if (event.currentTarget.classList.contains('lps-delete-button') || event.target.classList.contains('lps-delete-button')) return
             const settings = getSettings()
             const targetLocation = changeCurrent ? settings.location : settings.locationList.find(m => m.id == id)
-            const preset = deepClone(targetLocation.presets.find(p => p.id == event.currentTarget.dataset.id))
+            const preset = foundry.utils.deepClone(targetLocation.presets.find(p => p.id == event.currentTarget.dataset.id))
             const oldPresets = targetLocation.presets
             settings.location = preset.locationData
             settings.location.presets = oldPresets
             const hiddenPortElements = event.currentTarget.querySelectorAll('.lps-preset-portrait.lps-hidden-portrait')
             const hiddenPortIds = Array.from(hiddenPortElements).map(p => p.dataset.id)
             const presetSpeakers = Object.keys(preset.portraits).reduce((acc, key) => {
-                if (hiddenPortIds.includes(acc[key]?.id)) acc[key] = null
+                if (hiddenPortIds.includes(acc[key]?.id)) {
+                    acc[key] = null
+                    return acc
+                }
+                const savedPortrait = getPortrait(acc[key]?.id, settings)
+                if (savedPortrait) {
+                    acc[key] = {
+                        ...savedPortrait,
+                        ...acc[key],
+                        name: normalizePortraitName(acc[key]?.name || savedPortrait.name),
+                        title: acc[key]?.title || savedPortrait.title || "",
+                        scale: acc[key]?.scale ?? savedPortrait.scale ?? 100,
+                        offsetXl: acc[key]?.offsetXl ?? savedPortrait.offsetXl ?? 0,
+                        offsetXr: acc[key]?.offsetXr ?? savedPortrait.offsetXr ?? 0,
+                        offsetY: acc[key]?.offsetY ?? savedPortrait.offsetY ?? 0,
+                        mirrorX: acc[key]?.mirrorX ?? savedPortrait.mirrorX ?? false,
+                        widthEqualFrame: acc[key]?.widthEqualFrame ?? savedPortrait.widthEqualFrame ?? game.settings.get(C.ID, "worldWidthEqualFrame")
+                    }
+                }
                 return acc
             }, preset.portraits)
             const newSpeakers = foundry.utils.mergeObject(getEmptyActiveSpeakers(), presetSpeakers)

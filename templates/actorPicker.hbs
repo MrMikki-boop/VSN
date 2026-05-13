@@ -1,10 +1,10 @@
 <form id="vn-actor-picker" class="flexcol">
 
-    <div class="ac-portraits flexrow" style="margin-top: 3px;">
+    <div class="ac-portraits flexrow">
         <div class="flex1"></div>
             {{#each activeSpeakers.left as |speaker|}}
                 <div data-pos="{{speaker.pos}}" data-id="{{speaker.id}}" class="vn-ac-slot{{#if (eq ../highlightEl speaker.pos)}} vn-hlight{{/if}}">
-                    <img data-pos="{{speaker.pos}}" src="{{speaker.img}}" style="transform:scaleX(-1);"/>
+                    <img data-pos="{{speaker.pos}}" src="{{speaker.img}}" style="transform:scaleX({{#if speaker.mirrorX}}-1{{else}}1{{/if}});"/>
                 </div>
             {{/each}}
             <div class="ac-mid-border"></div>
@@ -35,10 +35,10 @@
             <ul class="ac-actor-list">
                 {{#each portraits as |actor|}}
                     <li class="flexrow" data-id="{{actor.id}}">
-                        <img class="flex0"src="{{actor.img}}"/>
+                        <img class="flex0" src="{{actor.img}}"/>
                         <div class="ac-actor-text">
-                            <h4 class="ac-actor-name">{{actor.name}}</span>
-                            <h4 class="ac-actor-title">{{actor.title}}</span>
+                            <h4 class="ac-actor-name">{{actor.name}}</h4>
+                            <h4 class="ac-actor-title">{{actor.title}}</h4>
                         </div>
                         <div class="ac-buttons-container">
                             {{#if actor.hasActor}}<button type="openActor" class="ac-open-button" data-tooltip="{{localize "visual-novel-dialogues.actorPicker.openActor"}}"><i class="fas fa-user"></i></button>{{/if}}

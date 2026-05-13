@@ -1,4 +1,4 @@
-import { Constants as C, getPortrait, getSettings, getTags, updatePortrait } from '../scripts/const.js';
+import { Constants as C, getPortrait, getSettings, getTags, normalizePortraitName, updatePortrait } from '../scripts/const.js';
 import { ActorPicker } from './actorPicker.js';
 
 export class ActorPickerSub extends FormApplication {
@@ -28,12 +28,13 @@ export class ActorPickerSub extends FormApplication {
 
     getData(options) {
         const portFlags = getPortrait(this.portraitId) || {name: game.actors.get(this.portraitId)?.prototypeToken?.name};
+        if (portFlags.name) portFlags.name = normalizePortraitName(portFlags.name);
         return { portFlags: portFlags };
     }
 
     activateListeners(html) {
         super.activateListeners(html);
-        const _id = this.portraitId || randomID()
+        const _id = this.portraitId || foundry.utils.randomID()
         html.find('.aps-submit-button').on('click', async (event) => {
             const newImg = html[0].querySelector('.aps-choose-img').value
             const _imgIsFine = await srcExists(newImg || "")
@@ -44,7 +45,7 @@ export class ActorPickerSub extends FormApplication {
                 const actor = game.actors.get(_id)
                 const flag = getPortrait(_id) || {
                     img: newImg,
-                    name: html[0].querySelector('.aps-text-input.aps-name').value,
+                    name: normalizePortraitName(html[0].querySelector('.aps-text-input.aps-name').value),
                     title: html[0].querySelector('.aps-text-input.aps-title').value,
                     tag: actor ? getTags(actor.folder) : [game.i18n.localize(`${C.ID}.placeholders.defaultMainFolderName`), game.i18n.localize(`${C.ID}.placeholders.noFolder`)],
                     id: actor?.id || _id,
@@ -58,7 +59,7 @@ export class ActorPickerSub extends FormApplication {
                 const nameElValue = html[0].querySelector('.aps-text-input.aps-name')?.value
                 const titleElValue = html[0].querySelector('.aps-text-input.aps-title')?.value
                 if (imgElValue !== flag.img) flag.img = imgElValue
-                if (nameElValue) flag.name = nameElValue
+                if (nameElValue) flag.name = normalizePortraitName(nameElValue)
                 if (titleElValue) flag.title = titleElValue
                 if (!flag.name) {
                     ui.notifications.error(game.i18n.localize(`${C.ID}.actorPickerSub.noName`))

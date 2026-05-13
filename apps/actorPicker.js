@@ -1,4 +1,4 @@
-import { Constants as C, getSettings, getTags, getPortrait, updatePortrait, getEmptyActiveSpeakers, requestSettingsUpdate } from '../scripts/const.js';
+import { Constants as C, getActorPortraitData, getActorPortraitImage, getSettings, getPortrait, isDefaultImage, normalizePortraitName, updatePortrait, getEmptyActiveSpeakers, requestSettingsUpdate } from '../scripts/const.js';
 import { PresetUIClass } from '../scripts/presetUIClass.js';
 import { ActorPickerSub } from './actorPickerSub.js';
 
@@ -15,7 +15,7 @@ export class ActorPicker extends FormApplication {
         const defaults = super.defaultOptions;
 
         const overrides = {
-            classes: ['vn-actor-picker', 'z-index-1600'],
+            classes: ['vn-actor-picker'],
             width: 625,
             height: 750,
             resizable: false,
@@ -48,7 +48,7 @@ export class ActorPicker extends FormApplication {
 
         let data = {
             highlightEl: settingData.editActiveSpeaker,
-            portraits: settingData.portraits || [],
+            portraits: (settingData.portraits || []).map(p => ({...p, name: normalizePortraitName(p.name)})),
         }
         data.portraits.sort((a, b) => a.name.localeCompare(b.name))
 
@@ -66,7 +66,7 @@ export class ActorPicker extends FormApplication {
             const index = numbersArr(posParts[1])
             if (!index || index == "null") return acc
             if (index <= uiData.slotCount[posParts[0]]) {
-                acc[posParts[0]][index-1] = {...settingData.activeSpeakers[current], pos: current}
+                acc[posParts[0]][index-1] = {...settingData.activeSpeakers[current], name: normalizePortraitName(settingData.activeSpeakers[current]?.name), pos: current}
             }
             return acc
         }, {"left": [], "right": [], "center": []})
@@ -75,7 +75,7 @@ export class ActorPicker extends FormApplication {
         data.filters = [
             {
                 name: game.i18n.localize(`${C.ID}.actorPicker.generarFilter`),
-                list: [{name: game.i18n.localize(`${C.ID}.actorPicker.npcFilter`), id: randomID()}, {name: game.i18n.localize(`${C.ID}.actorPicker.onScene`), id: randomID()}]
+                list: [{name: game.i18n.localize(`${C.ID}.actorPicker.npcFilter`), id: foundry.utils.randomID()}, {name: game.i18n.localize(`${C.ID}.actorPicker.onScene`), id: foundry.utils.randomID()}]
             }
         ]
         data.filters = data.portraits.reduce((acc, current) => {
@@ -83,9 +83,9 @@ export class ActorPicker extends FormApplication {
             const tag = current.tag
             if (!tag) return acc
             if (!acc.find(f=>f.name == tag[0])) {
-                acc.push({name: tag[0], list: [{name: tag[1], id: randomID()}]})
+                acc.push({name: tag[0], list: [{name: tag[1], id: foundry.utils.randomID()}]})
             } else if (!acc.find(f=>f.name == tag[0]).list.find(f=>f.name == tag[1])) {
-                acc.find(f=>f.name == tag[0]).list.push({name: tag[1], id: randomID()})
+                acc.find(f=>f.name == tag[0]).list.push({name: tag[1], id: foundry.utils.randomID()})
             }
             return acc
         }, data.filters)
@@ -134,48 +134,14 @@ export class ActorPicker extends FormApplication {
             return false
         }
 
-        // Получаем изображение для портрета с приоритетом портретного изображения
-        const getImg = (actor) => {
-            // Если настройка указывает НЕ использовать токен для портретов,
-            // то приоритет отдается портретному изображению актёра
-            if (!useTokenForPortraits) {
-                // Сначала пытаемся взять портретное изображение актёра
-                const actorImg = actor.img
-                if (actorImg && actorImg !== "icons/svg/mystery-man.svg") {
-                    return actorImg
-                }
-
-                // Если портретного изображения нет, ищем в папке портретов по имени
-                // Эта логика может потребовать адаптации в зависимости от структуры файлов
-                // Пока используем токен как fallback
-                const tokenImg = actor.prototypeToken.texture.src
-                return (tokenImg && tokenImg !== "icons/svg/mystery-man.svg") ? tokenImg : null
-            } else {
-                // Если настройка указывает использовать токен, то используем токен
-                const tokenImg = actor.prototypeToken.texture.src
-                return (tokenImg && tokenImg !== "icons/svg/mystery-man.svg") ? tokenImg : null
-            }
-        }
-
-        const portraitPath = getImg(actor)
+        const portraitPath = getActorPortraitImage(actor, {preferToken: useTokenForPortraits})
         if (!portraitPath) {
             ui.notifications.error(game.i18n.localize(`${C.ID}.actorPicker.noImageFound`) || `Не найдено подходящее изображение для ${actor.name}`)
             return false
         }
 
         // Создаём новый портрет
-        const newPortrait = {
-            img: portraitPath,
-            name: actor.prototypeToken.name || actor.name,
-            title: "",
-            tag: getTags(actor.folder),
-            id: actor.id,
-            scale: 100,
-            offsetXl: 0,
-            offsetXr: 0,
-            offsetY: 0,
-            hasActor: true
-        }
+        const newPortrait = getActorPortraitData(actor, {img: portraitPath})
 
         settings.portraits.push(newPortrait)
         await requestSettingsUpdate(settings)
@@ -351,7 +317,7 @@ async function fullPortraitsCheck(_actors = []) {
         if (!useTokenForPortraits) {
             // Приоритет портретному изображению актёра
             const actorImg = actor.img
-            if (actorImg && actorImg !== "icons/svg/mystery-man.svg") {
+            if (!isDefaultImage(actorImg)) {
                 return actorImg
             }
 
@@ -361,12 +327,10 @@ async function fullPortraitsCheck(_actors = []) {
             if (img) return img
 
             // Финальный fallback: токен
-            const tokenImg = actor.prototypeToken.texture.src
-            return (tokenImg && tokenImg !== "icons/svg/mystery-man.svg") ? tokenImg : null
+            return getActorPortraitImage(actor, {preferToken: true})
         } else {
             // Используем токен, как было изначально
-            const img = actor.prototypeToken.texture.src
-            return (img && img != "icons/svg/mystery-man.svg") ? img : null
+            return getActorPortraitImage(actor, {preferToken: true})
         }
     }
 
@@ -377,7 +341,7 @@ async function fullPortraitsCheck(_actors = []) {
         let flag = getPortrait(actor.id, settings)
 
         // Миграция со старой системы хранения данных портретов
-        const _oldFlag = deepClone(actor.getFlag(C.ID, "portraitData"))
+        const _oldFlag = foundry.utils.deepClone(actor.getFlag(C.ID, "portraitData"))
         if (_oldFlag) {
             flag = _oldFlag
             await actor.unsetFlag(C.ID, "portraitData")
@@ -387,18 +351,7 @@ async function fullPortraitsCheck(_actors = []) {
         if (!flag) {    // Если флага нету, ищем подходящий портрет, и при наличии такового - устанавливаем флаги
             const portraitPath = getImg(actor)
             if (portraitPath) {
-                flag = {
-                    img: portraitPath,
-                    name: actor.prototypeToken.name,
-                    title: "",
-                    tag: getTags(actor.folder),
-                    id: actor.id,
-                    scale: 100,
-                    offsetXl: 0,
-                    offsetXr: 0,
-                    offsetY: 0,
-                    hasActor: true
-                }
+                flag = getActorPortraitData(actor, {img: portraitPath})
                 settings.portraits.push(flag)
             }
         } else {        // Если флаг есть, проверяем данные портрета
@@ -410,18 +363,7 @@ async function fullPortraitsCheck(_actors = []) {
                 settings.portraits = settings.portraits.filter(f => f.id !== actor.id)
                 continue
             } else {
-                const newFlag = {
-                    img: _img,
-                    name: flag.name || actor.prototypeToken.name,
-                    title: flag.title || "",
-                    tag: getTags(actor.folder),
-                    id: actor.id,
-                    scale: flag.scale || 100,
-                    offsetXl: flag.offsetXl || 0,
-                    offsetXr: flag.offsetXr || 0,
-                    offsetY: flag.offsetY || 0,
-                    hasActor: true
-                }
+                const newFlag = getActorPortraitData(actor, {existing: flag, img: _img})
                 if (_oldFlag || !foundry.utils.objectsEqual(flag, newFlag)) {
                     const _temp = await updatePortrait(newFlag.id, newFlag, settings, true)
                     settings.portraits = _temp.portraits
@@ -448,7 +390,7 @@ Hooks.on("getActorPickerHeaderButtons", (app, buttons) => {
     })
 });
 
-Hooks.on("updateActor ", async (actor, update, changes, userId) => {
+Hooks.on("updateActor", async (actor, update, changes, userId) => {
     await fullPortraitsCheck([actor])
 })
 
